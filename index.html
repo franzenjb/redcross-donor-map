@@ -600,11 +600,6 @@
                     <label for="min-gift">Minimum Gift ($)</label>
                     <input type="number" id="min-gift" placeholder="5000" min="5000" value="5000">
                 </div>
-                
-                <div class="control-group">
-                    <label for="max-gift">Maximum Gift ($)</label>
-                    <input type="number" id="max-gift" placeholder="No limit" min="5000">
-                </div>
             </div>
             
                 <div class="button-group">
@@ -818,8 +813,7 @@
             }
             
             const minGift = parseFloat(document.getElementById('min-gift').value) || 5000;
-            const maxGift = parseFloat(document.getElementById('max-gift').value) || Infinity;
-            filtered = filtered.filter(d => d.gift_amount >= minGift && d.gift_amount <= maxGift);
+            filtered = filtered.filter(d => d.gift_amount >= minGift);
             
             updateCityFilter(filtered);
             updateStats(filtered);
@@ -1140,7 +1134,7 @@
             
             Plotly.newPlot('plotly-map', [trace], layout, config);
             
-            // Update zoom tracking on interaction
+            // Update zoom tracking on interaction and update currentZoom/Center for manual controls
             document.getElementById('plotly-map').on('plotly_relayout', function(eventdata) {
                 if (eventdata['mapbox.zoom']) {
                     currentZoom = eventdata['mapbox.zoom'];
@@ -1149,9 +1143,52 @@
                     currentCenter = eventdata['mapbox.center'];
                 }
             });
+            
+            // Update the stored zoom and center for this view
+            currentZoom = mapZoom;
+            currentCenter = mapCenter;
         }
         
         function createHeatmap(data) {
+            // Calculate optimal zoom and center for filtered data
+            let mapCenter = { lat: 39.8283, lon: -98.5795 };
+            let mapZoom = 4;
+            
+            if (data.length > 0) {
+                const lats = data.map(d => d.lat).filter(lat => lat && !isNaN(lat));
+                const lons = data.map(d => d.lon).filter(lon => lon && !isNaN(lon));
+                
+                if (lats.length > 0 && lons.length > 0) {
+                    const minLat = Math.min(...lats);
+                    const maxLat = Math.max(...lats);
+                    const minLon = Math.min(...lons);
+                    const maxLon = Math.max(...lons);
+                    
+                    // Calculate center
+                    const centerLat = (minLat + maxLat) / 2;
+                    const centerLon = (minLon + maxLon) / 2;
+                    
+                    // Validate center is within US bounds
+                    if (centerLat > 20 && centerLat < 50 && centerLon > -130 && centerLon < -60) {
+                        mapCenter = { lat: centerLat, lon: centerLon };
+                        
+                        // Calculate appropriate zoom based on extent
+                        const latDiff = maxLat - minLat;
+                        const lonDiff = maxLon - minLon;
+                        const maxDiff = Math.max(latDiff, lonDiff);
+                        
+                        // Adjust zoom based on extent
+                        if (maxDiff > 40) mapZoom = 3;
+                        else if (maxDiff > 20) mapZoom = 4;
+                        else if (maxDiff > 10) mapZoom = 5;
+                        else if (maxDiff > 5) mapZoom = 6;
+                        else if (maxDiff > 2) mapZoom = 7;
+                        else if (maxDiff > 1) mapZoom = 8;
+                        else mapZoom = 9;
+                    }
+                }
+            }
+            
             const trace = {
                 type: 'densitymapbox',
                 lat: data.map(d => d.lat),
@@ -1178,11 +1215,8 @@
             const layout = {
                 mapbox: {
                     style: currentTheme === 'dark' ? 'carto-darkmatter' : 'carto-positron',
-                    center: {
-                        lat: currentCenter.lat || 39.8283,
-                        lon: currentCenter.lon || -98.5795
-                    },
-                    zoom: currentZoom || 4
+                    center: mapCenter,
+                    zoom: mapZoom
                 },
                 height: window.innerHeight - 60,
                 margin: {r:0, t:40, l:0, b:0},
@@ -1203,7 +1237,7 @@
             
             Plotly.newPlot('plotly-map', [trace], layout, config);
             
-            // Update zoom tracking on interaction
+            // Update zoom tracking on interaction and update currentZoom/Center for manual controls
             document.getElementById('plotly-map').on('plotly_relayout', function(eventdata) {
                 if (eventdata['mapbox.zoom']) {
                     currentZoom = eventdata['mapbox.zoom'];
@@ -1212,6 +1246,10 @@
                     currentCenter = eventdata['mapbox.center'];
                 }
             });
+            
+            // Update the stored zoom and center for this view
+            currentZoom = mapZoom;
+            currentCenter = mapCenter;
         }
         
         function createChoropleth(data) {
@@ -1279,7 +1317,7 @@
             
             Plotly.newPlot('plotly-map', [trace], layout, config);
             
-            // Update zoom tracking on interaction
+            // Update zoom tracking on interaction and update currentZoom/Center for manual controls
             document.getElementById('plotly-map').on('plotly_relayout', function(eventdata) {
                 if (eventdata['mapbox.zoom']) {
                     currentZoom = eventdata['mapbox.zoom'];
@@ -1288,9 +1326,52 @@
                     currentCenter = eventdata['mapbox.center'];
                 }
             });
+            
+            // Update the stored zoom and center for this view
+            currentZoom = mapZoom;
+            currentCenter = mapCenter;
         }
         
         function createPointMap(data) {
+            // Calculate optimal zoom and center for filtered data
+            let mapCenter = { lat: 39.8283, lon: -98.5795 };
+            let mapZoom = 4;
+            
+            if (data.length > 0) {
+                const lats = data.map(d => d.lat).filter(lat => lat && !isNaN(lat));
+                const lons = data.map(d => d.lon).filter(lon => lon && !isNaN(lon));
+                
+                if (lats.length > 0 && lons.length > 0) {
+                    const minLat = Math.min(...lats);
+                    const maxLat = Math.max(...lats);
+                    const minLon = Math.min(...lons);
+                    const maxLon = Math.max(...lons);
+                    
+                    // Calculate center
+                    const centerLat = (minLat + maxLat) / 2;
+                    const centerLon = (minLon + maxLon) / 2;
+                    
+                    // Validate center is within US bounds
+                    if (centerLat > 20 && centerLat < 50 && centerLon > -130 && centerLon < -60) {
+                        mapCenter = { lat: centerLat, lon: centerLon };
+                        
+                        // Calculate appropriate zoom based on extent
+                        const latDiff = maxLat - minLat;
+                        const lonDiff = maxLon - minLon;
+                        const maxDiff = Math.max(latDiff, lonDiff);
+                        
+                        // Adjust zoom based on extent
+                        if (maxDiff > 40) mapZoom = 3;
+                        else if (maxDiff > 20) mapZoom = 4;
+                        else if (maxDiff > 10) mapZoom = 5;
+                        else if (maxDiff > 5) mapZoom = 6;
+                        else if (maxDiff > 2) mapZoom = 7;
+                        else if (maxDiff > 1) mapZoom = 8;
+                        else mapZoom = 9;
+                    }
+                }
+            }
+            
             const trace = {
                 type: 'scattermapbox',
                 lon: data.map(d => d.lon),
@@ -1308,11 +1389,8 @@
             const layout = {
                 mapbox: {
                     style: currentTheme === 'dark' ? 'carto-darkmatter' : 'carto-positron',
-                    center: {
-                        lat: currentCenter.lat || 39.8283,
-                        lon: currentCenter.lon || -98.5795
-                    },
-                    zoom: currentZoom || 4
+                    center: mapCenter,
+                    zoom: mapZoom
                 },
                 height: window.innerHeight - 60,
                 margin: {r:0, t:40, l:0, b:0},
@@ -1333,7 +1411,7 @@
             
             Plotly.newPlot('plotly-map', [trace], layout, config);
             
-            // Update zoom tracking on interaction
+            // Update zoom tracking on interaction and update currentZoom/Center for manual controls
             document.getElementById('plotly-map').on('plotly_relayout', function(eventdata) {
                 if (eventdata['mapbox.zoom']) {
                     currentZoom = eventdata['mapbox.zoom'];
@@ -1342,6 +1420,10 @@
                     currentCenter = eventdata['mapbox.center'];
                 }
             });
+            
+            // Update the stored zoom and center for this view
+            currentZoom = mapZoom;
+            currentCenter = mapCenter;
         }
         
         function updateCharts(data) {
@@ -1413,7 +1495,6 @@
             document.getElementById('city-filter').value = 'all';
             document.getElementById('gift-category').value = 'all';
             document.getElementById('min-gift').value = '5000';
-            document.getElementById('max-gift').value = '';
             applyFilters();
         }
         
