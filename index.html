@@ -616,8 +616,7 @@
                 <button class="zoom-btn" onclick="zoomOut()">−</button>
                 <button class="zoom-btn zoom-reset" onclick="resetZoom()">Reset</button>
             </div>
-            <div class="zoom-info" id="zoom-info">
-                💡 Tip: Double-click to zoom in • Shift + Double-click to zoom out
+            <div class="zoom-info" id="zoom-info" style="display: none;">
             </div>
             <div id="plotly-map"></div>
             <div id="leaflet-map"></div>
@@ -1332,6 +1331,8 @@
             currentCenter = mapCenter;
         }
         
+        let currentMarkerSize = 6; // Store current marker size for dynamic updates
+        
         function createPointMap(data) {
             // Calculate optimal zoom and center for filtered data
             let mapCenter = { lat: 39.8283, lon: -98.5795 };
@@ -1372,13 +1373,23 @@
                 }
             }
             
+            // Calculate marker size based on zoom level
+            // Zoom 3-4 (full US): 6px
+            // Zoom 5-6 (regional): 10px  
+            // Zoom 7-8 (state): 14px
+            // Zoom 9+ (city): 18px
+            currentMarkerSize = 6;
+            if (mapZoom >= 9) currentMarkerSize = 18;
+            else if (mapZoom >= 7) currentMarkerSize = 14;
+            else if (mapZoom >= 5) currentMarkerSize = 10;
+            
             const trace = {
                 type: 'scattermapbox',
                 lon: data.map(d => d.lon),
                 lat: data.map(d => d.lat),
                 mode: 'markers',
                 marker: {
-                    size: 6,
+                    size: currentMarkerSize,
                     color: RED_CROSS_COLORS.primary_red,
                     opacity: 0.7
                 },
@@ -1415,6 +1426,20 @@
             document.getElementById('plotly-map').on('plotly_relayout', function(eventdata) {
                 if (eventdata['mapbox.zoom']) {
                     currentZoom = eventdata['mapbox.zoom'];
+                    
+                    // For point map, update marker size based on new zoom level
+                    if (currentMapType === 'mapbox-points') {
+                        let newMarkerSize = 6;
+                        if (currentZoom >= 9) newMarkerSize = 18;
+                        else if (currentZoom >= 7) newMarkerSize = 14;
+                        else if (currentZoom >= 5) newMarkerSize = 10;
+                        
+                        // Update marker size if it changed
+                        if (newMarkerSize !== currentMarkerSize) {
+                            Plotly.restyle('plotly-map', {'marker.size': newMarkerSize}, [0]);
+                            currentMarkerSize = newMarkerSize;
+                        }
+                    }
                 }
                 if (eventdata['mapbox.center']) {
                     currentCenter = eventdata['mapbox.center'];
