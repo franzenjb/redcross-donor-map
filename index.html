@@ -268,6 +268,64 @@
             position: relative;
         }
         
+        .zoom-controls {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .zoom-btn:hover {
+            background: var(--red-cross-primary);
+            color: white;
+            border-color: var(--red-cross-primary);
+            transform: scale(1.1);
+        }
+        
+        .zoom-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .zoom-reset {
+            font-size: 14px;
+            padding: 8px 12px;
+            width: auto;
+            height: auto;
+            margin-top: 5px;
+        }
+        
+        .zoom-info {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: rgba(44, 62, 80, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
         #plotly-map {
             width: 100%;
             height: 700px;
@@ -443,6 +501,14 @@
         </div>
         
         <div class="map-container">
+            <div class="zoom-controls" id="zoom-controls">
+                <button class="zoom-btn" onclick="zoomIn()">+</button>
+                <button class="zoom-btn" onclick="zoomOut()">−</button>
+                <button class="zoom-btn zoom-reset" onclick="resetZoom()">Reset</button>
+            </div>
+            <div class="zoom-info" id="zoom-info">
+                💡 Tip: Double-click to zoom in • Shift + Double-click to zoom out
+            </div>
             <div id="plotly-map"></div>
             <div id="leaflet-map"></div>
             <div class="location-counter" id="location-counter" style="display: none;">
@@ -469,6 +535,9 @@
         let processedData = [];
         let leafletMap = null;
         let leafletMarkers = null;
+        let currentZoom = 4;
+        let currentCenter = {lat: 39.8283, lon: -98.5795};
+        let mapBounds = null;
         
         const RED_CROSS_COLORS = {
             primary_red: '#ED1B2E',
@@ -631,15 +700,35 @@
             // Update location counter
             document.getElementById('location-count').textContent = data.length.toLocaleString();
             
+            // Calculate bounds if we have data
+            if (data.length > 0) {
+                const lats = data.map(d => d.lat);
+                const lons = data.map(d => d.lon);
+                mapBounds = {
+                    minLat: Math.min(...lats),
+                    maxLat: Math.max(...lats),
+                    minLon: Math.min(...lons),
+                    maxLon: Math.max(...lons)
+                };
+                currentCenter = {
+                    lat: (mapBounds.minLat + mapBounds.maxLat) / 2,
+                    lon: (mapBounds.minLon + mapBounds.maxLon) / 2
+                };
+            }
+            
             // Hide all maps first
             document.getElementById('plotly-map').style.display = 'block';
             document.getElementById('leaflet-map').style.display = 'none';
             document.getElementById('location-counter').style.display = 'none';
+            document.getElementById('zoom-controls').style.display = 'flex';
+            document.getElementById('zoom-info').style.display = 'block';
             
             if (currentMapType === 'leaflet') {
                 document.getElementById('plotly-map').style.display = 'none';
                 document.getElementById('leaflet-map').style.display = 'block';
                 document.getElementById('location-counter').style.display = 'block';
+                document.getElementById('zoom-controls').style.display = 'none';
+                document.getElementById('zoom-info').style.display = 'none';
                 createLeafletMap(data);
             } else if (currentMapType === 'mapbox-cluster') {
                 createClusterMap(data);
@@ -648,7 +737,54 @@
             } else if (currentMapType === 'heatmap') {
                 createHeatmap(data);
             } else if (currentMapType === 'choropleth') {
+                document.getElementById('zoom-controls').style.display = 'none';
+                document.getElementById('zoom-info').style.display = 'none';
                 createChoropleth(data);
+            }
+        }
+        
+        function zoomIn() {
+            currentZoom = Math.min(currentZoom + 1, 18);
+            updatePlotlyZoom();
+        }
+        
+        function zoomOut() {
+            currentZoom = Math.max(currentZoom - 1, 1);
+            updatePlotlyZoom();
+        }
+        
+        function resetZoom() {
+            if (mapBounds) {
+                // Calculate appropriate zoom level for bounds
+                const latDiff = mapBounds.maxLat - mapBounds.minLat;
+                const lonDiff = mapBounds.maxLon - mapBounds.minLon;
+                const maxDiff = Math.max(latDiff, lonDiff);
+                
+                if (maxDiff > 50) currentZoom = 3;
+                else if (maxDiff > 20) currentZoom = 4;
+                else if (maxDiff > 10) currentZoom = 5;
+                else if (maxDiff > 5) currentZoom = 6;
+                else currentZoom = 7;
+                
+                currentCenter = {
+                    lat: (mapBounds.minLat + mapBounds.maxLat) / 2,
+                    lon: (mapBounds.minLon + mapBounds.maxLon) / 2
+                };
+            } else {
+                currentZoom = 4;
+                currentCenter = {lat: 39.8283, lon: -98.5795};
+            }
+            updatePlotlyZoom();
+        }
+        
+        function updatePlotlyZoom() {
+            const update = {
+                'mapbox.zoom': currentZoom,
+                'mapbox.center': currentCenter
+            };
+            
+            if (currentMapType !== 'choropleth') {
+                Plotly.relayout('plotly-map', update);
             }
         }
         
@@ -790,10 +926,10 @@
                 mapbox: {
                     style: 'carto-positron',
                     center: {
-                        lat: data.length ? data.reduce((sum, d) => sum + d.lat, 0) / data.length : 39.8283,
-                        lon: data.length ? data.reduce((sum, d) => sum + d.lon, 0) / data.length : -98.5795
+                        lat: currentCenter.lat,
+                        lon: currentCenter.lon
                     },
-                    zoom: data.length > 100 ? 3 : 5
+                    zoom: currentZoom
                 },
                 height: 700,
                 margin: {r:0, t:40, l:0, b:0},
@@ -803,7 +939,26 @@
                 }
             };
             
-            Plotly.newPlot('plotly-map', [trace], layout, {responsive: true, displayModeBar: true, displaylogo: false});
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['select2d', 'lasso2d'],
+                doubleClick: 'reset+autosize',
+                scrollZoom: true
+            };
+            
+            Plotly.newPlot('plotly-map', [trace], layout, config);
+            
+            // Update zoom tracking on interaction
+            document.getElementById('plotly-map').on('plotly_relayout', function(eventdata) {
+                if (eventdata['mapbox.zoom']) {
+                    currentZoom = eventdata['mapbox.zoom'];
+                }
+                if (eventdata['mapbox.center']) {
+                    currentCenter = eventdata['mapbox.center'];
+                }
+            });
         }
         
         function createHeatmap(data) {
@@ -834,10 +989,10 @@
                 mapbox: {
                     style: 'carto-positron',
                     center: {
-                        lat: data.length ? data.reduce((sum, d) => sum + d.lat, 0) / data.length : 39.8283,
-                        lon: data.length ? data.reduce((sum, d) => sum + d.lon, 0) / data.length : -98.5795
+                        lat: currentCenter.lat,
+                        lon: currentCenter.lon
                     },
-                    zoom: data.length > 100 ? 3 : 5
+                    zoom: currentZoom
                 },
                 height: 700,
                 margin: {r:0, t:40, l:0, b:0},
@@ -847,7 +1002,26 @@
                 }
             };
             
-            Plotly.newPlot('plotly-map', [trace], layout, {responsive: true, displayModeBar: true, displaylogo: false});
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['select2d', 'lasso2d'],
+                doubleClick: 'reset+autosize',
+                scrollZoom: true
+            };
+            
+            Plotly.newPlot('plotly-map', [trace], layout, config);
+            
+            // Update zoom tracking on interaction
+            document.getElementById('plotly-map').on('plotly_relayout', function(eventdata) {
+                if (eventdata['mapbox.zoom']) {
+                    currentZoom = eventdata['mapbox.zoom'];
+                }
+                if (eventdata['mapbox.center']) {
+                    currentCenter = eventdata['mapbox.center'];
+                }
+            });
         }
         
         function createChoropleth(data) {
@@ -904,7 +1078,26 @@
                 }
             };
             
-            Plotly.newPlot('plotly-map', [trace], layout, {responsive: true, displayModeBar: true, displaylogo: false});
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['select2d', 'lasso2d'],
+                doubleClick: 'reset+autosize',
+                scrollZoom: true
+            };
+            
+            Plotly.newPlot('plotly-map', [trace], layout, config);
+            
+            // Update zoom tracking on interaction
+            document.getElementById('plotly-map').on('plotly_relayout', function(eventdata) {
+                if (eventdata['mapbox.zoom']) {
+                    currentZoom = eventdata['mapbox.zoom'];
+                }
+                if (eventdata['mapbox.center']) {
+                    currentCenter = eventdata['mapbox.center'];
+                }
+            });
         }
         
         function createPointMap(data) {
@@ -926,10 +1119,10 @@
                 mapbox: {
                     style: 'carto-positron',
                     center: {
-                        lat: data.length ? data.reduce((sum, d) => sum + d.lat, 0) / data.length : 39.8283,
-                        lon: data.length ? data.reduce((sum, d) => sum + d.lon, 0) / data.length : -98.5795
+                        lat: currentCenter.lat,
+                        lon: currentCenter.lon
                     },
-                    zoom: data.length > 100 ? 3 : 5
+                    zoom: currentZoom
                 },
                 height: 700,
                 margin: {r:0, t:40, l:0, b:0},
@@ -939,7 +1132,26 @@
                 }
             };
             
-            Plotly.newPlot('plotly-map', [trace], layout, {responsive: true, displayModeBar: true, displaylogo: false});
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['select2d', 'lasso2d'],
+                doubleClick: 'reset+autosize',
+                scrollZoom: true
+            };
+            
+            Plotly.newPlot('plotly-map', [trace], layout, config);
+            
+            // Update zoom tracking on interaction
+            document.getElementById('plotly-map').on('plotly_relayout', function(eventdata) {
+                if (eventdata['mapbox.zoom']) {
+                    currentZoom = eventdata['mapbox.zoom'];
+                }
+                if (eventdata['mapbox.center']) {
+                    currentCenter = eventdata['mapbox.center'];
+                }
+            });
         }
         
         function updateCharts(data) {
