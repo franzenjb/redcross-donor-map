@@ -6,6 +6,11 @@
     <title>American Red Cross Donor Map</title>
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -166,29 +171,63 @@
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+            background: #2c3e50;
+            padding: 10px;
+            border-radius: 8px;
         }
         
         .map-type-btn {
             flex: 1;
-            padding: 10px;
-            background: white;
-            color: var(--red-cross-gray);
-            border: 2px solid var(--red-cross-light-gray);
-            border-radius: 5px;
+            padding: 12px 20px;
+            background: #4a5f7a;
+            color: white;
+            border: none;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
             font-weight: 600;
+            font-size: 14px;
         }
         
         .map-type-btn.active {
             background: var(--red-cross-primary);
             color: white;
-            border-color: var(--red-cross-primary);
+            box-shadow: 0 2px 8px rgba(237, 27, 46, 0.4);
         }
         
         .map-type-btn:hover:not(.active) {
-            border-color: var(--red-cross-primary);
-            color: var(--red-cross-primary);
+            background: #5a6f8a;
+        }
+        
+        #leaflet-map {
+            width: 100%;
+            height: 700px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .location-counter {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(44, 62, 80, 0.9);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 1000;
+        }
+        
+        .cluster-icon {
+            background: #ED1B2E;
+            border: 3px solid #27ae60;
+            border-radius: 50%;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
         }
         
         .stats-grid {
@@ -226,6 +265,7 @@
             padding: 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             min-height: 750px;
+            position: relative;
         }
         
         #plotly-map {
@@ -329,10 +369,11 @@
     <div class="container">
         <div class="controls-panel">
             <div class="map-type-buttons">
-                <button class="map-type-btn active" data-type="cluster">Cluster Map</button>
+                <button class="map-type-btn active" data-type="mapbox-cluster">Mapbox Clustered</button>
+                <button class="map-type-btn" data-type="mapbox-points">Mapbox Points</button>
+                <button class="map-type-btn" data-type="leaflet">Leaflet</button>
                 <button class="map-type-btn" data-type="heatmap">Heat Map</button>
-                <button class="map-type-btn" data-type="choropleth">State Choropleth</button>
-                <button class="map-type-btn" data-type="points">Point Map</button>
+                <button class="map-type-btn" data-type="choropleth">Choropleth</button>
             </div>
             
             <div class="controls-grid">
@@ -403,6 +444,10 @@
         
         <div class="map-container">
             <div id="plotly-map"></div>
+            <div id="leaflet-map"></div>
+            <div class="location-counter" id="location-counter" style="display: none;">
+                Showing <span id="location-count">0</span> locations
+            </div>
         </div>
         
         <div class="charts-container">
@@ -418,10 +463,12 @@
     </div>
     
     <script>
-        let currentMapType = 'cluster';
+        let currentMapType = 'mapbox-cluster';
         let currentFilters = {};
         let allData = [];
         let processedData = [];
+        let leafletMap = null;
+        let leafletMarkers = null;
         
         const RED_CROSS_COLORS = {
             primary_red: '#ED1B2E',
@@ -581,14 +628,116 @@
         }
         
         function updateMap(data) {
-            if (currentMapType === 'cluster') {
+            // Update location counter
+            document.getElementById('location-count').textContent = data.length.toLocaleString();
+            
+            // Hide all maps first
+            document.getElementById('plotly-map').style.display = 'block';
+            document.getElementById('leaflet-map').style.display = 'none';
+            document.getElementById('location-counter').style.display = 'none';
+            
+            if (currentMapType === 'leaflet') {
+                document.getElementById('plotly-map').style.display = 'none';
+                document.getElementById('leaflet-map').style.display = 'block';
+                document.getElementById('location-counter').style.display = 'block';
+                createLeafletMap(data);
+            } else if (currentMapType === 'mapbox-cluster') {
                 createClusterMap(data);
+            } else if (currentMapType === 'mapbox-points') {
+                createPointMap(data);
             } else if (currentMapType === 'heatmap') {
                 createHeatmap(data);
             } else if (currentMapType === 'choropleth') {
                 createChoropleth(data);
-            } else {
-                createPointMap(data);
+            }
+        }
+        
+        function createLeafletMap(data) {
+            // Initialize map if not exists
+            if (!leafletMap) {
+                leafletMap = L.map('leaflet-map').setView([39.8283, -98.5795], 4);
+                
+                // Add dark tile layer similar to screenshot
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '© OpenStreetMap contributors © CARTO',
+                    subdomains: 'abcd',
+                    maxZoom: 19
+                }).addTo(leafletMap);
+            }
+            
+            // Clear existing markers
+            if (leafletMarkers) {
+                leafletMap.removeLayer(leafletMarkers);
+            }
+            
+            // Create marker cluster group
+            leafletMarkers = L.markerClusterGroup({
+                iconCreateFunction: function(cluster) {
+                    const count = cluster.getChildCount();
+                    const size = count < 10 ? 40 : count < 100 ? 50 : 60;
+                    
+                    return L.divIcon({
+                        html: `<div style="
+                            background: #ED1B2E;
+                            border: 3px solid #27ae60;
+                            width: ${size}px;
+                            height: ${size}px;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            color: white;
+                            font-weight: bold;
+                            font-size: ${size < 50 ? '14px' : '16px'};
+                        ">${count}</div>`,
+                        className: 'custom-cluster-icon',
+                        iconSize: L.point(size, size)
+                    });
+                },
+                maxClusterRadius: 80,
+                spiderfyOnMaxZoom: true,
+                showCoverageOnHover: false,
+                zoomToBoundsOnClick: true
+            });
+            
+            // Add markers to cluster group
+            data.forEach(d => {
+                if (d.lat && d.lon) {
+                    const marker = L.marker([d.lat, d.lon], {
+                        icon: L.divIcon({
+                            html: `<div style="
+                                background: #ED1B2E;
+                                width: 10px;
+                                height: 10px;
+                                border-radius: 50%;
+                                border: 2px solid white;
+                            "></div>`,
+                            className: 'custom-marker',
+                            iconSize: L.point(10, 10)
+                        })
+                    });
+                    
+                    marker.bindPopup(`
+                        <div style="font-family: 'Open Sans', sans-serif;">
+                            <strong>${d.city}, ${d.state}</strong><br>
+                            Gift: $${d.gift_amount.toLocaleString()}<br>
+                            Donor #: ${d['Donor #']}
+                        </div>
+                    `);
+                    
+                    leafletMarkers.addLayer(marker);
+                }
+            });
+            
+            // Add cluster group to map
+            leafletMap.addLayer(leafletMarkers);
+            
+            // Fit bounds if we have data
+            if (data.length > 0) {
+                const bounds = leafletMarkers.getBounds();
+                if (bounds.isValid()) {
+                    leafletMap.fitBounds(bounds, {padding: [50, 50]});
+                }
             }
         }
         
