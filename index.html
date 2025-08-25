@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>American Red Cross Donor Map</title>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red-cross-primary: #ED1B2E;
+            --red-cross-secondary: #B31E29;
+            --red-cross-dark: #8B1A1E;
+            --red-cross-gray: #6D6E70;
+            --red-cross-light-gray: #D7D7D8;
+            --red-cross-white: #FFFFFF;
+            --red-cross-black: #231F20;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Open Sans', Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: var(--red-cross-black);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--red-cross-primary) 0%, var(--red-cross-secondary) 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .red-cross-logo {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: var(--red-cross-primary);
+            font-weight: bold;
+        }
+        
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        
+        .controls-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-top: 3px solid var(--red-cross-primary);
+        }
+        
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label {
+            font-weight: 600;
+            color: var(--red-cross-gray);
+            margin-bottom: 8px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        select, input {
+            padding: 10px 12px;
+            border: 2px solid var(--red-cross-light-gray);
+            border-radius: 5px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        select:hover, input:hover {
+            border-color: var(--red-cross-primary);
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--red-cross-primary);
+            box-shadow: 0 0 0 3px rgba(237, 27, 46, 0.1);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            background: var(--red-cross-primary);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        button:hover {
+            background: var(--red-cross-secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(237, 27, 46, 0.3);
+        }
+        
+        button.secondary {
+            background: white;
+            color: var(--red-cross-primary);
+            border: 2px solid var(--red-cross-primary);
+        }
+        
+        button.secondary:hover {
+            background: var(--red-cross-primary);
+            color: white;
+        }
+        
+        .map-type-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .map-type-btn {
+            flex: 1;
+            padding: 10px;
+            background: white;
+            color: var(--red-cross-gray);
+            border: 2px solid var(--red-cross-light-gray);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .map-type-btn.active {
+            background: var(--red-cross-primary);
+            color: white;
+            border-color: var(--red-cross-primary);
+        }
+        
+        .map-type-btn:hover:not(.active) {
+            border-color: var(--red-cross-primary);
+            color: var(--red-cross-primary);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-left: 4px solid var(--red-cross-primary);
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--red-cross-gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--red-cross-primary);
+        }
+        
+        .map-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            min-height: 750px;
+        }
+        
+        #plotly-map {
+            width: 100%;
+            height: 700px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.9);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .loading.show {
+            display: flex;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--red-cross-light-gray);
+            border-top-color: var(--red-cross-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .chart-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--red-cross-primary);
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--red-cross-light-gray);
+            padding-bottom: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+    
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="red-cross-logo">✚</div>
+                <h1>American Red Cross Donor Map</h1>
+            </div>
+            <div style="font-size: 14px; opacity: 0.9;">
+                Interactive Donor Visualization Dashboard
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="controls-panel">
+            <div class="map-type-buttons">
+                <button class="map-type-btn active" data-type="cluster">Cluster Map</button>
+                <button class="map-type-btn" data-type="heatmap">Heat Map</button>
+                <button class="map-type-btn" data-type="choropleth">State Choropleth</button>
+                <button class="map-type-btn" data-type="points">Point Map</button>
+            </div>
+            
+            <div class="controls-grid">
+                <div class="control-group">
+                    <label for="state-filter">State</label>
+                    <select id="state-filter">
+                        <option value="all">All States</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="city-filter">City</label>
+                    <select id="city-filter">
+                        <option value="all">All Cities</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="gift-category">Gift Category</label>
+                    <select id="gift-category">
+                        <option value="all">All Categories</option>
+                        <option value="$5K">$5K</option>
+                        <option value="$5K-7.5K">$5K-7.5K</option>
+                        <option value="$7.5K-10K">$7.5K-10K</option>
+                        <option value="$10K-15K">$10K-15K</option>
+                        <option value="$15K-25K">$15K-25K</option>
+                        <option value="$25K-50K">$25K-50K</option>
+                        <option value="$50K-100K">$50K-100K</option>
+                        <option value=">$100K">>$100K</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="min-gift">Minimum Gift ($)</label>
+                    <input type="number" id="min-gift" placeholder="5000" min="5000" value="5000">
+                </div>
+                
+                <div class="control-group">
+                    <label for="max-gift">Maximum Gift ($)</label>
+                    <input type="number" id="max-gift" placeholder="No limit" min="5000">
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button onclick="applyFilters()">Apply Filters</button>
+                <button class="secondary" onclick="resetFilters()">Reset All</button>
+            </div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Donors</div>
+                <div class="stat-value" id="total-donors">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Donations</div>
+                <div class="stat-value" id="total-gifts">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Average Gift</div>
+                <div class="stat-value" id="avg-gift">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Median Gift</div>
+                <div class="stat-value" id="median-gift">-</div>
+            </div>
+        </div>
+        
+        <div class="map-container">
+            <div id="plotly-map"></div>
+        </div>
+        
+        <div class="charts-container">
+            <div class="chart-card">
+                <div class="chart-title">Top States by Donations</div>
+                <div id="top-states-chart"></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Gift Distribution</div>
+                <div id="gift-distribution-chart"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentMapType = 'cluster';
+        let currentFilters = {};
+        let allData = [];
+        let processedData = [];
+        
+        const RED_CROSS_COLORS = {
+            primary_red: '#ED1B2E',
+            secondary_red: '#B31E29',
+            dark_red: '#8B1A1E',
+            gray: '#6D6E70',
+            light_gray: '#D7D7D8',
+            white: '#FFFFFF',
+            black: '#231F20'
+        };
+        
+        const GIFT_COLORS = {
+            '$5K': '#FFE6E8',
+            '$5K-7.5K': '#FFB3B8',
+            '$7.5K-10K': '#FF8088',
+            '$10K-15K': '#FF4D58',
+            '$15K-25K': '#ED1B2E',
+            '$25K-50K': '#B31E29',
+            '$50K-100K': '#8B1A1E',
+            '>$100K': '#4A0E0E'
+        };
+        
+        document.querySelectorAll('.map-type-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.map-type-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentMapType = this.dataset.type;
+                applyFilters();
+            });
+        });
+        
+        function showLoading() {
+            document.getElementById('loading').classList.add('show');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('show');
+        }
+        
+        function parseGiftAmount(gift) {
+            if (typeof gift === 'string') {
+                return parseFloat(gift.replace('$', '').replace(/,/g, '').trim());
+            }
+            return parseFloat(gift) || 0;
+        }
+        
+        function getGiftCategory(amount) {
+            if (amount <= 5000) return '$5K';
+            if (amount <= 7500) return '$5K-7.5K';
+            if (amount <= 10000) return '$7.5K-10K';
+            if (amount <= 15000) return '$10K-15K';
+            if (amount <= 25000) return '$15K-25K';
+            if (amount <= 50000) return '$25K-50K';
+            if (amount <= 100000) return '$50K-100K';
+            return '>$100K';
+        }
+        
+        function loadCSVData() {
+            showLoading();
+            Papa.parse('data/donors.csv', {
+                download: true,
+                header: true,
+                complete: function(results) {
+                    allData = results.data.filter(row => {
+                        const gift = parseGiftAmount(row[' Gift $ ']);
+                        return !isNaN(gift) && gift > 0 && row.X && row.Y;
+                    });
+                    
+                    processedData = allData.map(row => {
+                        const gift = parseGiftAmount(row[' Gift $ ']);
+                        return {
+                            ...row,
+                            gift_amount: gift,
+                            gift_category: getGiftCategory(gift),
+                            state: row.State || row['Region Abbreviation'] || '',
+                            city: row['City.1'] || row.City || row['ARC Best City'] || '',
+                            lon: parseFloat(row.X),
+                            lat: parseFloat(row.Y)
+                        };
+                    });
+                    
+                    populateFilters();
+                    applyFilters();
+                    hideLoading();
+                }
+            });
+        }
+        
+        function populateFilters() {
+            const states = [...new Set(processedData.map(d => d.state).filter(s => s))].sort();
+            const stateSelect = document.getElementById('state-filter');
+            states.forEach(state => {
+                const option = document.createElement('option');
+                option.value = state;
+                option.textContent = state;
+                stateSelect.appendChild(option);
+            });
+        }
+        
+        function applyFilters() {
+            showLoading();
+            
+            let filtered = [...processedData];
+            
+            const state = document.getElementById('state-filter').value;
+            if (state && state !== 'all') {
+                filtered = filtered.filter(d => d.state === state);
+            }
+            
+            const city = document.getElementById('city-filter').value;
+            if (city && city !== 'all') {
+                filtered = filtered.filter(d => d.city === city);
+            }
+            
+            const category = document.getElementById('gift-category').value;
+            if (category && category !== 'all') {
+                filtered = filtered.filter(d => d.gift_category === category);
+            }
+            
+            const minGift = parseFloat(document.getElementById('min-gift').value) || 5000;
+            const maxGift = parseFloat(document.getElementById('max-gift').value) || Infinity;
+            filtered = filtered.filter(d => d.gift_amount >= minGift && d.gift_amount <= maxGift);
+            
+            updateCityFilter(filtered);
+            updateStats(filtered);
+            updateMap(filtered);
+            updateCharts(filtered);
+            
+            hideLoading();
+        }
+        
+        function updateCityFilter(data) {
+            const cities = [...new Set(data.map(d => d.city).filter(c => c))].sort();
+            const citySelect = document.getElementById('city-filter');
+            const currentCity = citySelect.value;
+            
+            citySelect.innerHTML = '<option value="all">All Cities</option>';
+            cities.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                if (city === currentCity) option.selected = true;
+                citySelect.appendChild(option);
+            });
+        }
+        
+        function updateStats(data) {
+            const total = data.reduce((sum, d) => sum + d.gift_amount, 0);
+            const avg = total / data.length || 0;
+            const sorted = [...data].sort((a, b) => a.gift_amount - b.gift_amount);
+            const median = sorted.length ? sorted[Math.floor(sorted.length / 2)].gift_amount : 0;
+            
+            document.getElementById('total-donors').textContent = data.length.toLocaleString();
+            document.getElementById('total-gifts').textContent = '$' + total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('avg-gift').textContent = '$' + avg.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('median-gift').textContent = '$' + median.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+        
+        function updateMap(data) {
+            if (currentMapType === 'cluster') {
+                createClusterMap(data);
+            } else if (currentMapType === 'heatmap') {
+                createHeatmap(data);
+            } else if (currentMapType === 'choropleth') {
+                createChoropleth(data);
+            } else {
+                createPointMap(data);
+            }
+        }
+        
+        function createClusterMap(data) {
+            const hoverText = data.map(d => 
+                `<b>${d.city}, ${d.state}</b><br>` +
+                `Gift: $${d.gift_amount.toLocaleString()}<br>` +
+                `Donor #: ${d['Donor #']}`
+            );
+            
+            const trace = {
+                type: 'scattermapbox',
+                lon: data.map(d => d.lon),
+                lat: data.map(d => d.lat),
+                mode: 'markers',
+                marker: {
+                    size: 10,
+                    color: data.map(d => d.gift_amount),
+                    colorscale: [
+                        [0, '#FFE6E8'],
+                        [0.2, '#FFB3B8'],
+                        [0.4, '#FF8088'],
+                        [0.6, '#FF4D58'],
+                        [0.8, '#ED1B2E'],
+                        [1, '#8B1A1E']
+                    ],
+                    showscale: true,
+                    colorbar: {
+                        title: 'Gift Amount',
+                        titlefont: {color: RED_CROSS_COLORS.dark_red},
+                        tickfont: {color: RED_CROSS_COLORS.gray},
+                        tickprefix: '$',
+                        tickformat: ',.0f'
+                    },
+                    opacity: 0.8
+                },
+                text: hoverText,
+                hovertemplate: '%{text}<extra></extra>',
+                cluster: {
+                    enabled: true,
+                    size: 40,
+                    step: 1,
+                    color: ['#FFE6E8', '#FFB3B8', '#FF8088', '#FF4D58', '#ED1B2E', '#B31E29', '#8B1A1E'],
+                    opacity: 0.8,
+                    maxzoom: 10
+                }
+            };
+            
+            const layout = {
+                mapbox: {
+                    style: 'carto-positron',
+                    center: {
+                        lat: data.length ? data.reduce((sum, d) => sum + d.lat, 0) / data.length : 39.8283,
+                        lon: data.length ? data.reduce((sum, d) => sum + d.lon, 0) / data.length : -98.5795
+                    },
+                    zoom: data.length > 100 ? 3 : 5
+                },
+                height: 700,
+                margin: {r:0, t:40, l:0, b:0},
+                title: {
+                    text: 'American Red Cross Donor Map',
+                    font: {size: 24, color: RED_CROSS_COLORS.primary_red, family: 'Arial, sans-serif'}
+                }
+            };
+            
+            Plotly.newPlot('plotly-map', [trace], layout, {responsive: true, displayModeBar: true, displaylogo: false});
+        }
+        
+        function createHeatmap(data) {
+            const trace = {
+                type: 'densitymapbox',
+                lat: data.map(d => d.lat),
+                lon: data.map(d => d.lon),
+                z: data.map(d => d.gift_amount),
+                radius: 20,
+                colorscale: [
+                    [0, RED_CROSS_COLORS.white],
+                    [0.2, '#FFE6E8'],
+                    [0.4, '#FFB3B8'],
+                    [0.6, '#FF8088'],
+                    [0.8, RED_CROSS_COLORS.primary_red],
+                    [1, RED_CROSS_COLORS.dark_red]
+                ],
+                showscale: true,
+                colorbar: {
+                    title: 'Gift Amount',
+                    titlefont: {color: RED_CROSS_COLORS.dark_red},
+                    tickfont: {color: RED_CROSS_COLORS.gray},
+                    tickprefix: '$'
+                }
+            };
+            
+            const layout = {
+                mapbox: {
+                    style: 'carto-positron',
+                    center: {
+                        lat: data.length ? data.reduce((sum, d) => sum + d.lat, 0) / data.length : 39.8283,
+                        lon: data.length ? data.reduce((sum, d) => sum + d.lon, 0) / data.length : -98.5795
+                    },
+                    zoom: data.length > 100 ? 3 : 5
+                },
+                height: 700,
+                margin: {r:0, t:40, l:0, b:0},
+                title: {
+                    text: 'American Red Cross Donor Heatmap',
+                    font: {size: 24, color: RED_CROSS_COLORS.primary_red, family: 'Arial, sans-serif'}
+                }
+            };
+            
+            Plotly.newPlot('plotly-map', [trace], layout, {responsive: true, displayModeBar: true, displaylogo: false});
+        }
+        
+        function createChoropleth(data) {
+            const stateData = {};
+            data.forEach(d => {
+                if (!stateData[d.state]) {
+                    stateData[d.state] = {total: 0, count: 0};
+                }
+                stateData[d.state].total += d.gift_amount;
+                stateData[d.state].count += 1;
+            });
+            
+            const states = Object.keys(stateData);
+            const totals = states.map(s => stateData[s].total);
+            const text = states.map(s => 
+                `${s}<br>Donors: ${stateData[s].count.toLocaleString()}<br>Total: $${stateData[s].total.toLocaleString()}`
+            );
+            
+            const trace = {
+                type: 'choropleth',
+                locationmode: 'USA-states',
+                locations: states,
+                z: totals,
+                text: text,
+                hovertemplate: '%{text}<extra></extra>',
+                colorscale: [
+                    [0, RED_CROSS_COLORS.white],
+                    [0.2, '#FFE6E8'],
+                    [0.4, '#FFB3B8'],
+                    [0.6, '#FF8088'],
+                    [0.8, RED_CROSS_COLORS.primary_red],
+                    [1, RED_CROSS_COLORS.dark_red]
+                ],
+                colorbar: {
+                    title: 'Total Donations',
+                    titlefont: {color: RED_CROSS_COLORS.dark_red},
+                    tickfont: {color: RED_CROSS_COLORS.gray},
+                    tickprefix: '$'
+                }
+            };
+            
+            const layout = {
+                geo: {
+                    scope: 'usa',
+                    projection: {type: 'albers usa'},
+                    showlakes: true,
+                    lakecolor: 'rgb(255, 255, 255)'
+                },
+                height: 700,
+                margin: {r:0, t:60, l:0, b:0},
+                title: {
+                    text: 'American Red Cross Donations by State',
+                    font: {size: 24, color: RED_CROSS_COLORS.primary_red, family: 'Arial, sans-serif'}
+                }
+            };
+            
+            Plotly.newPlot('plotly-map', [trace], layout, {responsive: true, displayModeBar: true, displaylogo: false});
+        }
+        
+        function createPointMap(data) {
+            const trace = {
+                type: 'scattermapbox',
+                lon: data.map(d => d.lon),
+                lat: data.map(d => d.lat),
+                mode: 'markers',
+                marker: {
+                    size: 6,
+                    color: RED_CROSS_COLORS.primary_red,
+                    opacity: 0.7
+                },
+                text: data.map(d => `${d.city}, ${d.state}<br>$${d.gift_amount.toLocaleString()}`),
+                hovertemplate: '%{text}<extra></extra>'
+            };
+            
+            const layout = {
+                mapbox: {
+                    style: 'carto-positron',
+                    center: {
+                        lat: data.length ? data.reduce((sum, d) => sum + d.lat, 0) / data.length : 39.8283,
+                        lon: data.length ? data.reduce((sum, d) => sum + d.lon, 0) / data.length : -98.5795
+                    },
+                    zoom: data.length > 100 ? 3 : 5
+                },
+                height: 700,
+                margin: {r:0, t:40, l:0, b:0},
+                title: {
+                    text: 'American Red Cross Donor Locations',
+                    font: {size: 24, color: RED_CROSS_COLORS.primary_red, family: 'Arial, sans-serif'}
+                }
+            };
+            
+            Plotly.newPlot('plotly-map', [trace], layout, {responsive: true, displayModeBar: true, displaylogo: false});
+        }
+        
+        function updateCharts(data) {
+            // Top states chart
+            const stateData = {};
+            data.forEach(d => {
+                if (!stateData[d.state]) stateData[d.state] = 0;
+                stateData[d.state] += d.gift_amount;
+            });
+            
+            const sortedStates = Object.entries(stateData)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+            
+            const stateTrace = {
+                x: sortedStates.map(s => s[0]),
+                y: sortedStates.map(s => s[1]),
+                type: 'bar',
+                marker: {color: RED_CROSS_COLORS.primary_red, opacity: 0.8},
+                text: sortedStates.map(s => '$' + s[1].toLocaleString()),
+                textposition: 'auto',
+                hovertemplate: '%{x}<br>$%{y:,.0f}<extra></extra>'
+            };
+            
+            const stateLayout = {
+                height: 250,
+                margin: {t: 10, b: 40, l: 60, r: 20},
+                xaxis: {tickangle: -45},
+                yaxis: {title: 'Total Donations ($)', tickformat: '$,.0f'},
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('top-states-chart', [stateTrace], stateLayout, {responsive: true, displayModeBar: false});
+            
+            // Gift distribution chart
+            const categoryCount = {};
+            data.forEach(d => {
+                if (!categoryCount[d.gift_category]) categoryCount[d.gift_category] = 0;
+                categoryCount[d.gift_category]++;
+            });
+            
+            const categories = ['$5K', '$5K-7.5K', '$7.5K-10K', '$10K-15K', '$15K-25K', '$25K-50K', '$50K-100K', '>$100K'];
+            const counts = categories.map(c => categoryCount[c] || 0);
+            
+            const pieTrace = {
+                labels: categories.filter((c, i) => counts[i] > 0),
+                values: counts.filter(c => c > 0),
+                type: 'pie',
+                marker: {colors: categories.filter((c, i) => counts[i] > 0).map(c => GIFT_COLORS[c])},
+                textinfo: 'label+percent',
+                hovertemplate: '%{label}<br>%{value} donors<br>%{percent}<extra></extra>'
+            };
+            
+            const pieLayout = {
+                height: 250,
+                margin: {t: 10, b: 10, l: 10, r: 10},
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                showlegend: true,
+                legend: {orientation: 'v', x: 1, y: 0.5}
+            };
+            
+            Plotly.newPlot('gift-distribution-chart', [pieTrace], pieLayout, {responsive: true, displayModeBar: false});
+        }
+        
+        function resetFilters() {
+            document.getElementById('state-filter').value = 'all';
+            document.getElementById('city-filter').value = 'all';
+            document.getElementById('gift-category').value = 'all';
+            document.getElementById('min-gift').value = '5000';
+            document.getElementById('max-gift').value = '';
+            applyFilters();
+        }
+        
+        document.getElementById('state-filter').addEventListener('change', function() {
+            if (this.value !== 'all') {
+                document.getElementById('city-filter').value = 'all';
+                applyFilters();
+            }
+        });
+        
+        // Load data when page loads
+        loadCSVData();
+    </script>
+</body>
+</html>
