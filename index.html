@@ -552,8 +552,9 @@
         let leafletMap = null;
         let leafletMarkers = null;
         let currentZoom = 4;
-        let currentCenter = {lat: 39.8283, lon: -98.5795};
+        let currentCenter = {lat: 39.8283, lon: -98.5795}; // Center of continental US
         let mapBounds = null;
+        let initialLoad = true;
         
         const RED_CROSS_COLORS = {
             primary_red: '#ED1B2E',
@@ -718,18 +719,44 @@
             
             // Calculate bounds if we have data
             if (data.length > 0) {
-                const lats = data.map(d => d.lat);
-                const lons = data.map(d => d.lon);
-                mapBounds = {
-                    minLat: Math.min(...lats),
-                    maxLat: Math.max(...lats),
-                    minLon: Math.min(...lons),
-                    maxLon: Math.max(...lons)
-                };
-                currentCenter = {
-                    lat: (mapBounds.minLat + mapBounds.maxLat) / 2,
-                    lon: (mapBounds.minLon + mapBounds.maxLon) / 2
-                };
+                const lats = data.map(d => d.lat).filter(lat => lat && !isNaN(lat));
+                const lons = data.map(d => d.lon).filter(lon => lon && !isNaN(lon));
+                
+                if (lats.length > 0 && lons.length > 0) {
+                    mapBounds = {
+                        minLat: Math.min(...lats),
+                        maxLat: Math.max(...lats),
+                        minLon: Math.min(...lons),
+                        maxLon: Math.max(...lons)
+                    };
+                    
+                    // Only update center if it makes sense (US bounds roughly)
+                    const calculatedLat = (mapBounds.minLat + mapBounds.maxLat) / 2;
+                    const calculatedLon = (mapBounds.minLon + mapBounds.maxLon) / 2;
+                    
+                    // Check if calculated center is within reasonable US bounds
+                    if (calculatedLat > 20 && calculatedLat < 50 && 
+                        calculatedLon > -130 && calculatedLon < -60) {
+                        currentCenter = {
+                            lat: calculatedLat,
+                            lon: calculatedLon
+                        };
+                    }
+                    
+                    // Set appropriate zoom for initial load
+                    if (initialLoad) {
+                        const latDiff = mapBounds.maxLat - mapBounds.minLat;
+                        const lonDiff = mapBounds.maxLon - mapBounds.minLon;
+                        const maxDiff = Math.max(latDiff, lonDiff);
+                        
+                        if (maxDiff > 40) currentZoom = 3;
+                        else if (maxDiff > 20) currentZoom = 4;
+                        else if (maxDiff > 10) currentZoom = 5;
+                        else currentZoom = 6;
+                        
+                        initialLoad = false;
+                    }
+                }
             }
             
             // Hide all maps first
@@ -942,10 +969,10 @@
                 mapbox: {
                     style: 'carto-positron',
                     center: {
-                        lat: currentCenter.lat,
-                        lon: currentCenter.lon
+                        lat: currentCenter.lat || 39.8283,
+                        lon: currentCenter.lon || -98.5795
                     },
-                    zoom: currentZoom
+                    zoom: currentZoom || 4 || 4
                 },
                 height: 700,
                 margin: {r:0, t:40, l:0, b:0},
@@ -1005,10 +1032,10 @@
                 mapbox: {
                     style: 'carto-positron',
                     center: {
-                        lat: currentCenter.lat,
-                        lon: currentCenter.lon
+                        lat: currentCenter.lat || 39.8283,
+                        lon: currentCenter.lon || -98.5795
                     },
-                    zoom: currentZoom
+                    zoom: currentZoom || 4
                 },
                 height: 700,
                 margin: {r:0, t:40, l:0, b:0},
@@ -1135,10 +1162,10 @@
                 mapbox: {
                     style: 'carto-positron',
                     center: {
-                        lat: currentCenter.lat,
-                        lon: currentCenter.lon
+                        lat: currentCenter.lat || 39.8283,
+                        lon: currentCenter.lon || -98.5795
                     },
-                    zoom: currentZoom
+                    zoom: currentZoom || 4
                 },
                 height: 700,
                 margin: {r:0, t:40, l:0, b:0},
