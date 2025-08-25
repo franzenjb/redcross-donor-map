@@ -449,9 +449,8 @@
     <div class="main-content">
         <div class="sidebar">
             <div class="map-type-buttons">
-                <button class="map-type-btn active" data-type="mapbox-cluster">📍 Mapbox Clustered</button>
-                <button class="map-type-btn" data-type="mapbox-points">• Mapbox Points</button>
-                <button class="map-type-btn" data-type="leaflet">🗺️ Leaflet Clusters</button>
+                <button class="map-type-btn active" data-type="leaflet">🗺️ Leaflet Clusters</button>
+                <button class="map-type-btn" data-type="mapbox-points">📍 Mapbox Points</button>
                 <button class="map-type-btn" data-type="heatmap">🔥 Heat Map</button>
                 <button class="map-type-btn" data-type="choropleth">🇺🇸 State Choropleth</button>
             </div>
@@ -545,7 +544,7 @@
     </div>
     
     <script>
-        let currentMapType = 'mapbox-cluster';
+        let currentMapType = 'leaflet';
         let currentFilters = {};
         let allData = [];
         let processedData = [];
@@ -620,7 +619,12 @@
                 complete: function(results) {
                     allData = results.data.filter(row => {
                         const gift = parseGiftAmount(row[' Gift $ ']);
-                        return !isNaN(gift) && gift > 0 && row.X && row.Y;
+                        const lat = parseFloat(row.Y);
+                        const lon = parseFloat(row.X);
+                        // Filter out territories - keep only continental US and nearby
+                        // Excludes: Guam (~13°N, 144°E), Puerto Rico (~18°N, -66°W), Hawaii (~21°N, -157°W), Alaska (~64°N, -152°W)
+                        const isContiguousUS = lat > 24 && lat < 50 && lon > -125 && lon < -66;
+                        return !isNaN(gift) && gift > 0 && row.X && row.Y && isContiguousUS;
                     });
                     
                     processedData = allData.map(row => {
@@ -773,8 +777,6 @@
                 document.getElementById('zoom-controls').style.display = 'none';
                 document.getElementById('zoom-info').style.display = 'none';
                 createLeafletMap(data);
-            } else if (currentMapType === 'mapbox-cluster') {
-                createClusterMap(data);
             } else if (currentMapType === 'mapbox-points') {
                 createPointMap(data);
             } else if (currentMapType === 'heatmap') {
