@@ -318,6 +318,9 @@
             flex: 1;
             position: relative;
             background: #f5f5f5;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
         }
         
         .zoom-controls {
@@ -1102,7 +1105,7 @@
                     },
                     zoom: currentZoom || 4 || 4
                 },
-                height: 700,
+                height: window.innerHeight - 60,
                 margin: {r:0, t:40, l:0, b:0},
                 title: {
                     text: 'American Red Cross Donor Map',
@@ -1165,7 +1168,7 @@
                     },
                     zoom: currentZoom || 4
                 },
-                height: 700,
+                height: window.innerHeight - 60,
                 margin: {r:0, t:40, l:0, b:0},
                 title: {
                     text: 'American Red Cross Donor Heatmap',
@@ -1241,7 +1244,7 @@
                     showlakes: true,
                     lakecolor: 'rgb(255, 255, 255)'
                 },
-                height: 700,
+                height: window.innerHeight - 60,
                 margin: {r:0, t:60, l:0, b:0},
                 title: {
                     text: 'American Red Cross Donations by State',
@@ -1295,7 +1298,7 @@
                     },
                     zoom: currentZoom || 4
                 },
-                height: 700,
+                height: window.innerHeight - 60,
                 margin: {r:0, t:40, l:0, b:0},
                 title: {
                     text: 'American Red Cross Donor Locations',
@@ -1407,6 +1410,16 @@
         
         // Load data when page loads
         loadCSVData();
+        
+        // Handle window resize for Plotly maps
+        window.addEventListener('resize', function() {
+            if (currentMapType !== 'leaflet') {
+                const update = {
+                    height: window.innerHeight - 60
+                };
+                Plotly.relayout('plotly-map', update);
+            }
+        });
     </script>
 </body>
 </html>
