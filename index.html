@@ -545,6 +545,13 @@
                 <button class="map-type-btn" data-type="choropleth">🇺🇸 State Choropleth</button>
             </div>
             
+            <!-- Heatmap intensity control -->
+            <div id="heatmap-controls" style="display: none; padding: 15px; background: #f8f9fa;">
+                <label for="heatmap-intensity" style="display: block; margin-bottom: 5px; font-size: 14px;">Heatmap Intensity</label>
+                <input type="range" id="heatmap-intensity" min="5" max="50" value="20" step="5" style="width: 100%;" oninput="updateHeatmapIntensity(this.value)">
+                <span id="intensity-value" style="font-size: 12px; color: #7f8c8d;">Radius: 20</span>
+            </div>
+            
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-label">Total Donors</div>
@@ -638,6 +645,8 @@
         let currentCenter = {lat: 39.8283, lon: -98.5795}; // Center of continental US
         let mapBounds = null;
         let initialLoad = true;
+        let currentHeatmapIntensity = 20; // Store current heatmap intensity
+        let currentHeatmapData = null; // Store current data for heatmap updates
         let currentTheme = localStorage.getItem('theme') || 'light';
         
         // Initialize theme on page load
@@ -742,6 +751,17 @@
             if (amount <= 50000) return '$25K-50K';
             if (amount <= 100000) return '$50K-100K';
             return '>$100K';
+        }
+        
+        // Function to update heatmap intensity
+        function updateHeatmapIntensity(value) {
+            currentHeatmapIntensity = parseInt(value);
+            document.getElementById('intensity-value').textContent = 'Radius: ' + value;
+            
+            // If heatmap is currently displayed, update it
+            if (currentMapType === 'heatmap' && currentHeatmapData) {
+                createHeatmap(currentHeatmapData);
+            }
         }
         
         function loadCSVData() {
@@ -901,6 +921,7 @@
             document.getElementById('location-counter').style.display = 'none';
             document.getElementById('zoom-controls').style.display = 'flex';
             document.getElementById('zoom-info').style.display = 'block';
+            document.getElementById('heatmap-controls').style.display = 'none';
             
             if (currentMapType === 'leaflet') {
                 document.getElementById('plotly-map').style.display = 'none';
@@ -912,6 +933,7 @@
             } else if (currentMapType === 'mapbox-points') {
                 createPointMap(data);
             } else if (currentMapType === 'heatmap') {
+                document.getElementById('heatmap-controls').style.display = 'block';
                 createHeatmap(data);
             } else if (currentMapType === 'choropleth') {
                 document.getElementById('zoom-controls').style.display = 'none';
@@ -1149,6 +1171,8 @@
         }
         
         function createHeatmap(data) {
+            // Store the current data for intensity updates
+            currentHeatmapData = data;
             // Calculate optimal zoom and center for filtered data
             let mapCenter = { lat: 39.8283, lon: -98.5795 };
             let mapZoom = 4;
@@ -1193,7 +1217,7 @@
                 lat: data.map(d => d.lat),
                 lon: data.map(d => d.lon),
                 z: data.map(d => d.gift_amount),
-                radius: 20,
+                radius: currentHeatmapIntensity,
                 colorscale: [
                     [0, RED_CROSS_COLORS.white],
                     [0.2, '#FFE6E8'],
@@ -1315,20 +1339,7 @@
             };
             
             Plotly.newPlot('plotly-map', [trace], layout, config);
-            
-            // Update zoom tracking on interaction and update currentZoom/Center for manual controls
-            document.getElementById('plotly-map').on('plotly_relayout', function(eventdata) {
-                if (eventdata['mapbox.zoom']) {
-                    currentZoom = eventdata['mapbox.zoom'];
-                }
-                if (eventdata['mapbox.center']) {
-                    currentCenter = eventdata['mapbox.center'];
-                }
-            });
-            
-            // Update the stored zoom and center for this view
-            currentZoom = mapZoom;
-            currentCenter = mapCenter;
+            // Choropleth doesn't use mapbox, so no zoom tracking needed
         }
         
         let currentMarkerSize = 6; // Store current marker size for dynamic updates
