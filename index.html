@@ -786,7 +786,7 @@
             <div class="dashboard-grid">
                 <div class="dashboard-card">
                     <div class="dashboard-card-title">💰 Donation Efficiency by State (Per Capita Analysis)</div>
-                    <div id="perCapitaChart" style="height: 500px;"></div>
+                    <div id="perCapitaChart" style="height: 800px;"></div>
                     <div class="insight-box">
                         <div class="insight-title">Key Insight</div>
                         <div id="perCapitaInsight" class="insight-description">Loading analysis...</div>
@@ -1853,37 +1853,48 @@
                         [0.5, '#ED1B2E'],
                         [1, '#8B1A1E']
                     ],
-                    showscale: true,
-                    colorbar: {
-                        title: '$ per capita',
-                        titlefont: {color: currentTheme === 'dark' ? '#e0e0e0' : '#231F20'},
-                        x: 1.02
-                    }
+                    showscale: false  // Remove the colorbar
                 },
                 text: reversedData.map(d => `$${d.perCapita.toFixed(2)} per person<br>Total: $${(d.total/1000000).toFixed(1)}M<br>Donors per 1000: ${d.donorDensity.toFixed(2)}`),
-                hovertemplate: '%{y}<br>%{text}<extra></extra>'
+                hovertemplate: '%{y}<br>%{text}<extra></extra>',
+                textposition: 'outside',
+                textfont: {
+                    size: 11,
+                    color: currentTheme === 'dark' ? '#b0b0b0' : '#6D6E70'
+                }
             };
             
             const layout = {
-                title: 'Top 15 States by Donation Per Capita',
+                title: {
+                    text: 'Top 15 States by Donation Per Capita',
+                    font: {size: 18}
+                },
                 xaxis: {
                     title: 'Donations per Capita ($)', 
-                    tickfont: {color: currentTheme === 'dark' ? '#b0b0b0' : '#6D6E70'},
-                    gridcolor: currentTheme === 'dark' ? '#444' : '#ddd'
+                    tickfont: {
+                        color: currentTheme === 'dark' ? '#b0b0b0' : '#6D6E70',
+                        size: 12
+                    },
+                    gridcolor: currentTheme === 'dark' ? '#444' : '#ddd',
+                    range: [0.40, Math.max(...reversedData.map(d => d.perCapita)) * 1.15],  // Start at $0.40, add 15% padding
+                    tickprefix: '$',
+                    tickformat: '.2f'
                 },
                 yaxis: {
                     title: '', 
                     tickfont: {
                         color: currentTheme === 'dark' ? '#b0b0b0' : '#6D6E70',
-                        size: 12
+                        size: 14,  // Larger font for state names
+                        family: 'Arial, sans-serif'
                     },
                     automargin: true
                 },
                 paper_bgcolor: 'transparent',
                 plot_bgcolor: 'transparent',
                 font: {color: currentTheme === 'dark' ? '#e0e0e0' : '#231F20'},
-                margin: {t: 40, b: 60, l: 80, r: 120},
-                height: 500
+                margin: {t: 50, b: 70, l: 60, r: 150},  // More room on right for values
+                height: 800,  // Match the container height
+                bargap: 0.3  // Add space between bars
             };
             
             Plotly.newPlot('perCapitaChart', [trace], layout, {responsive: true, displayModeBar: false});
