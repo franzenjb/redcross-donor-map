@@ -285,6 +285,9 @@
         }
         
         .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
             padding: 15px;
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border-color);
@@ -292,12 +295,11 @@
         }
         
         .stat-card {
-            padding: 10px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        
-        .stat-card:last-child {
-            border-bottom: none;
+            padding: 10px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            text-align: center;
         }
         
         .stat-label {
@@ -312,6 +314,48 @@
             font-size: 24px;
             font-weight: 700;
             color: var(--red-cross-primary);
+        }
+        
+        /* Red intensity slider styling */
+        #heatmap-intensity {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #FFE6E8;
+            outline: none;
+        }
+        
+        #heatmap-intensity::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ED1B2E;
+            cursor: pointer;
+        }
+        
+        #heatmap-intensity::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ED1B2E;
+            cursor: pointer;
+            border: none;
+        }
+        
+        #heatmap-intensity::-webkit-slider-runnable-track {
+            background: linear-gradient(to right, #FFE6E8, #ED1B2E);
+            height: 6px;
+            border-radius: 3px;
+        }
+        
+        #heatmap-intensity::-moz-range-track {
+            background: linear-gradient(to right, #FFE6E8, #ED1B2E);
+            height: 6px;
+            border-radius: 3px;
         }
         
         .map-container {
