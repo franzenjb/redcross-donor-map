@@ -576,10 +576,13 @@
         }
         
         .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-            gap: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
             margin-top: 20px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
         }
         
         .dashboard-card {
@@ -781,9 +784,9 @@
         </div>
         <div class="dashboard-content">
             <div class="dashboard-grid">
-                <div class="dashboard-card" style="grid-column: span 2;">
+                <div class="dashboard-card">
                     <div class="dashboard-card-title">💰 Donation Efficiency by State (Per Capita Analysis)</div>
-                    <div id="perCapitaChart" style="height: 400px;"></div>
+                    <div id="perCapitaChart" style="height: 500px;"></div>
                     <div class="insight-box">
                         <div class="insight-title">Key Insight</div>
                         <div id="perCapitaInsight" class="insight-description">Loading analysis...</div>
@@ -792,7 +795,7 @@
                 
                 <div class="dashboard-card">
                     <div class="dashboard-card-title">🎯 Donor Market Opportunity Matrix</div>
-                    <div id="opportunityMatrix" style="height: 400px;"></div>
+                    <div id="opportunityMatrix" style="height: 500px;"></div>
                     <div class="insight-box">
                         <div class="insight-title">Opportunity Zones</div>
                         <div id="matrixInsight" class="insight-description">Loading analysis...</div>
@@ -801,7 +804,7 @@
                 
                 <div class="dashboard-card">
                     <div class="dashboard-card-title">🌟 Donation Velocity Radar</div>
-                    <div id="velocityRadar" style="height: 400px;"></div>
+                    <div id="velocityRadar" style="height: 500px;"></div>
                     <div class="insight-box">
                         <div class="insight-title">Performance Metrics</div>
                         <div id="radarInsight" class="insight-description">Loading analysis...</div>
@@ -810,7 +813,7 @@
                 
                 <div class="dashboard-card">
                     <div class="dashboard-card-title">📈 Wealth Index vs Donation Gap</div>
-                    <div id="wealthGapChart" style="height: 400px;"></div>
+                    <div id="wealthGapChart" style="height: 500px;"></div>
                     <div class="insight-box">
                         <div class="insight-title">Untapped Potential</div>
                         <div id="gapInsight" class="insight-description">Loading analysis...</div>
@@ -819,7 +822,7 @@
                 
                 <div class="dashboard-card">
                     <div class="dashboard-card-title">🏆 Top Donor Concentration Treemap</div>
-                    <div id="concentrationTreemap" style="height: 400px;"></div>
+                    <div id="concentrationTreemap" style="height: 500px;"></div>
                     <div class="insight-box">
                         <div class="insight-title">Concentration Risk</div>
                         <div id="treemapInsight" class="insight-description">Loading analysis...</div>
