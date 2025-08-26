@@ -1838,12 +1838,16 @@
             perCapitaData.sort((a, b) => b.perCapita - a.perCapita);
             const top15 = perCapitaData.slice(0, 15);
             
+            // Reverse for horizontal bar chart (lowest at top)
+            const reversedData = [...top15].reverse();
+            
             const trace = {
-                x: top15.map(d => d.state),
-                y: top15.map(d => d.perCapita),
+                y: reversedData.map(d => d.state),
+                x: reversedData.map(d => d.perCapita),
                 type: 'bar',
+                orientation: 'h',
                 marker: {
-                    color: top15.map(d => d.perCapita),
+                    color: reversedData.map(d => d.perCapita),
                     colorscale: [
                         [0, '#FFE6E8'],
                         [0.5, '#ED1B2E'],
@@ -1852,21 +1856,34 @@
                     showscale: true,
                     colorbar: {
                         title: '$ per capita',
-                        titlefont: {color: currentTheme === 'dark' ? '#e0e0e0' : '#231F20'}
+                        titlefont: {color: currentTheme === 'dark' ? '#e0e0e0' : '#231F20'},
+                        x: 1.02
                     }
                 },
-                text: top15.map(d => `$${d.perCapita.toFixed(2)} per person<br>Total: $${(d.total/1000000).toFixed(1)}M<br>Donors per 1000: ${d.donorDensity.toFixed(2)}`),
-                hovertemplate: '%{x}<br>%{text}<extra></extra>'
+                text: reversedData.map(d => `$${d.perCapita.toFixed(2)} per person<br>Total: $${(d.total/1000000).toFixed(1)}M<br>Donors per 1000: ${d.donorDensity.toFixed(2)}`),
+                hovertemplate: '%{y}<br>%{text}<extra></extra>'
             };
             
             const layout = {
                 title: 'Top 15 States by Donation Per Capita',
-                xaxis: {title: 'State', tickfont: {color: currentTheme === 'dark' ? '#b0b0b0' : '#6D6E70'}},
-                yaxis: {title: 'Donations per Capita ($)', tickfont: {color: currentTheme === 'dark' ? '#b0b0b0' : '#6D6E70'}},
+                xaxis: {
+                    title: 'Donations per Capita ($)', 
+                    tickfont: {color: currentTheme === 'dark' ? '#b0b0b0' : '#6D6E70'},
+                    gridcolor: currentTheme === 'dark' ? '#444' : '#ddd'
+                },
+                yaxis: {
+                    title: '', 
+                    tickfont: {
+                        color: currentTheme === 'dark' ? '#b0b0b0' : '#6D6E70',
+                        size: 12
+                    },
+                    automargin: true
+                },
                 paper_bgcolor: 'transparent',
                 plot_bgcolor: 'transparent',
                 font: {color: currentTheme === 'dark' ? '#e0e0e0' : '#231F20'},
-                margin: {t: 40, b: 60}
+                margin: {t: 40, b: 60, l: 80, r: 120},
+                height: 500
             };
             
             Plotly.newPlot('perCapitaChart', [trace], layout, {responsive: true, displayModeBar: false});
