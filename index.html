@@ -828,6 +828,42 @@
                         <div id="treemapInsight" class="insight-description">Loading analysis...</div>
                     </div>
                 </div>
+                
+                <div class="dashboard-card">
+                    <div class="dashboard-card-title">💎 Median Gift by State (Top 20)</div>
+                    <div id="medianGiftChart" style="height: 600px;"></div>
+                    <div class="insight-box">
+                        <div class="insight-title">Gift Consistency Analysis</div>
+                        <div id="medianInsight" class="insight-description">Loading analysis...</div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="dashboard-card-title">💵 Average Gift by State (Top 20)</div>
+                    <div id="averageGiftChart" style="height: 600px;"></div>
+                    <div class="insight-box">
+                        <div class="insight-title">Major Donor Influence</div>
+                        <div id="averageInsight" class="insight-description">Loading analysis...</div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="dashboard-card-title">👥 Donors per 100K Population</div>
+                    <div id="donorDensityChart" style="height: 600px;"></div>
+                    <div class="insight-box">
+                        <div class="insight-title">Market Penetration</div>
+                        <div id="densityInsight" class="insight-description">Loading analysis...</div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="dashboard-card-title">📊 Comprehensive State Metrics Comparison</div>
+                    <div id="metricsComparisonChart" style="height: 700px;"></div>
+                    <div class="insight-box">
+                        <div class="insight-title">Multi-Metric Analysis</div>
+                        <div id="comparisonInsight" class="insight-description">Loading analysis...</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1801,6 +1837,10 @@
                 createVelocityRadar();
                 createWealthGapChart();
                 createConcentrationTreemap();
+                createMedianGiftChart();
+                createAverageGiftChart();
+                createDonorDensityChart();
+                createMetricsComparisonChart();
             }, 100);
         }
         
@@ -2295,6 +2335,383 @@
                 `<strong>Concentration:</strong> Top 10% of donors contribute ${concentration}% of total<br>` +
                 `<strong>Risk Level:</strong> ${concentration > 50 ? 'High' : concentration > 30 ? 'Medium' : 'Low'}<br>` +
                 `Diversification needed in states with high donor concentration.`;
+        }
+        
+        function createMedianGiftChart() {
+            // Calculate median gift by state
+            const stateGifts = {};
+            processedData.forEach(d => {
+                if (d.state && d.state.length === 2) {
+                    if (!stateGifts[d.state]) {
+                        stateGifts[d.state] = [];
+                    }
+                    stateGifts[d.state].push(d.gift_amount);
+                }
+            });
+            
+            const medianData = [];
+            Object.keys(stateGifts).forEach(state => {
+                const gifts = stateGifts[state];
+                if (gifts.length >= 5) { // Only include states with 5+ donors
+                    const sorted = [...gifts].sort((a, b) => a - b);
+                    const median = sorted[Math.floor(sorted.length / 2)];
+                    medianData.push({
+                        state: state,
+                        median: median,
+                        count: gifts.length,
+                        total: gifts.reduce((sum, g) => sum + g, 0)
+                    });
+                }
+            });
+            
+            medianData.sort((a, b) => b.median - a.median);
+            const top20 = medianData.slice(0, 20).reverse();
+            
+            const trace = {
+                y: top20.map(d => d.state),
+                x: top20.map(d => d.median),
+                type: 'bar',
+                orientation: 'h',
+                marker: {
+                    color: top20.map(d => d.median),
+                    colorscale: [
+                        [0, '#FFE6E8'],
+                        [0.5, '#FF8088'],
+                        [1, '#8B1A1E']
+                    ]
+                },
+                text: top20.map(d => `$${d.median.toFixed(0)}<br>${d.count} donors`),
+                textposition: 'outside',
+                hovertemplate: '%{y}<br>Median: $%{x:,.0f}<br>Donors: %{text}<extra></extra>'
+            };
+            
+            const layout = {
+                title: 'States by Median Gift Size',
+                xaxis: {
+                    title: 'Median Gift Amount ($)',
+                    tickprefix: '$',
+                    tickformat: ',.0f',
+                    gridcolor: currentTheme === 'dark' ? '#444' : '#ddd'
+                },
+                yaxis: {
+                    title: '',
+                    tickfont: {size: 12}
+                },
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: {color: currentTheme === 'dark' ? '#e0e0e0' : '#231F20'},
+                margin: {t: 50, b: 70, l: 60, r: 100},
+                height: 600
+            };
+            
+            Plotly.newPlot('medianGiftChart', [trace], layout, {responsive: true, displayModeBar: false});
+            
+            const topState = medianData[0];
+            const nationalMedian = 9167; // From your stats
+            document.getElementById('medianInsight').innerHTML = 
+                `<strong>${topState.state}</strong> has the highest median gift at <strong>$${topState.median.toFixed(0)}</strong>. ` +
+                `National median is <strong>$${nationalMedian.toLocaleString()}</strong>. ` +
+                `States with high medians indicate consistent mid-level giving patterns.`;
+        }
+        
+        function createAverageGiftChart() {
+            // Calculate average gift by state
+            const stateData = {};
+            processedData.forEach(d => {
+                if (d.state && d.state.length === 2) {
+                    if (!stateData[d.state]) {
+                        stateData[d.state] = {total: 0, count: 0};
+                    }
+                    stateData[d.state].total += d.gift_amount;
+                    stateData[d.state].count += 1;
+                }
+            });
+            
+            const avgData = [];
+            Object.keys(stateData).forEach(state => {
+                if (stateData[state].count >= 5) {
+                    avgData.push({
+                        state: state,
+                        average: stateData[state].total / stateData[state].count,
+                        count: stateData[state].count,
+                        total: stateData[state].total
+                    });
+                }
+            });
+            
+            avgData.sort((a, b) => b.average - a.average);
+            const top20 = avgData.slice(0, 20).reverse();
+            
+            const trace = {
+                y: top20.map(d => d.state),
+                x: top20.map(d => d.average),
+                type: 'bar',
+                orientation: 'h',
+                marker: {
+                    color: top20.map(d => d.average),
+                    colorscale: [
+                        [0, '#E8F5E9'],
+                        [0.5, '#66BB6A'],
+                        [1, '#2E7D32']
+                    ]
+                },
+                text: top20.map(d => `$${d.average.toFixed(0)}<br>${d.count} donors`),
+                textposition: 'outside',
+                hovertemplate: '%{y}<br>Average: $%{x:,.0f}<br>Total: $%{text}<extra></extra>'
+            };
+            
+            const layout = {
+                title: 'States by Average Gift Size',
+                xaxis: {
+                    title: 'Average Gift Amount ($)',
+                    tickprefix: '$',
+                    tickformat: ',.0f',
+                    gridcolor: currentTheme === 'dark' ? '#444' : '#ddd'
+                },
+                yaxis: {
+                    title: '',
+                    tickfont: {size: 12}
+                },
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: {color: currentTheme === 'dark' ? '#e0e0e0' : '#231F20'},
+                margin: {t: 50, b: 70, l: 60, r: 100},
+                height: 600
+            };
+            
+            Plotly.newPlot('averageGiftChart', [trace], layout, {responsive: true, displayModeBar: false});
+            
+            const topState = avgData[0];
+            const nationalAvg = 17638; // From your stats
+            const skew = topState.average / nationalAvg;
+            document.getElementById('averageInsight').innerHTML = 
+                `<strong>${topState.state}</strong> leads with average gift of <strong>$${topState.average.toFixed(0)}</strong> ` +
+                `(${skew.toFixed(1)}x national average of $${nationalAvg.toLocaleString()}). ` +
+                `High averages often indicate presence of major donors.`;
+        }
+        
+        function createDonorDensityChart() {
+            // Calculate donors per 100k population
+            const stateData = {};
+            processedData.forEach(d => {
+                if (d.state && d.state.length === 2) {
+                    if (!stateData[d.state]) {
+                        stateData[d.state] = {count: 0, total: 0};
+                    }
+                    stateData[d.state].count += 1;
+                    stateData[d.state].total += d.gift_amount;
+                }
+            });
+            
+            const densityData = [];
+            Object.keys(stateData).forEach(state => {
+                const pop = statePopulations[state];
+                if (pop && stateData[state].count >= 5) {
+                    densityData.push({
+                        state: state,
+                        donorsPer100k: (stateData[state].count / (pop * 10)), // pop is in millions
+                        count: stateData[state].count,
+                        population: pop,
+                        avgGift: stateData[state].total / stateData[state].count
+                    });
+                }
+            });
+            
+            densityData.sort((a, b) => b.donorsPer100k - a.donorsPer100k);
+            const top20 = densityData.slice(0, 20).reverse();
+            
+            const trace = {
+                y: top20.map(d => d.state),
+                x: top20.map(d => d.donorsPer100k),
+                type: 'bar',
+                orientation: 'h',
+                marker: {
+                    color: top20.map(d => d.donorsPer100k),
+                    colorscale: [
+                        [0, '#FFF3E0'],
+                        [0.5, '#FF9800'],
+                        [1, '#E65100']
+                    ]
+                },
+                text: top20.map(d => `${d.donorsPer100k.toFixed(1)} per 100k<br>${d.count} total`),
+                textposition: 'outside',
+                hovertemplate: '%{y}<br>Donors per 100k: %{x:.1f}<br>Population: %{customdata}M<extra></extra>',
+                customdata: top20.map(d => d.population.toFixed(1))
+            };
+            
+            const layout = {
+                title: 'Donor Market Penetration by State',
+                xaxis: {
+                    title: 'Donors per 100,000 Population',
+                    gridcolor: currentTheme === 'dark' ? '#444' : '#ddd'
+                },
+                yaxis: {
+                    title: '',
+                    tickfont: {size: 12}
+                },
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: {color: currentTheme === 'dark' ? '#e0e0e0' : '#231F20'},
+                margin: {t: 50, b: 70, l: 60, r: 120},
+                height: 600
+            };
+            
+            Plotly.newPlot('donorDensityChart', [trace], layout, {responsive: true, displayModeBar: false});
+            
+            const topState = densityData[0];
+            const nationalDensity = 10117 / 331.9; // Total donors / US population in millions
+            document.getElementById('densityInsight').innerHTML = 
+                `<strong>${topState.state}</strong> has highest penetration with <strong>${topState.donorsPer100k.toFixed(1)}</strong> donors per 100k ` +
+                `(national average: ${nationalDensity.toFixed(1)}). ` +
+                `High penetration states are prime for major gift cultivation.`;
+        }
+        
+        function createMetricsComparisonChart() {
+            // Create comprehensive comparison of all metrics
+            const stateMetrics = {};
+            
+            // Gather all metrics for each state
+            processedData.forEach(d => {
+                if (d.state && d.state.length === 2) {
+                    if (!stateMetrics[d.state]) {
+                        stateMetrics[d.state] = {
+                            gifts: [],
+                            total: 0,
+                            count: 0
+                        };
+                    }
+                    stateMetrics[d.state].gifts.push(d.gift_amount);
+                    stateMetrics[d.state].total += d.gift_amount;
+                    stateMetrics[d.state].count += 1;
+                }
+            });
+            
+            // Calculate all metrics
+            const comparisonData = [];
+            Object.keys(stateMetrics).forEach(state => {
+                const data = stateMetrics[state];
+                const pop = statePopulations[state];
+                
+                if (pop && data.count >= 10) { // Only states with 10+ donors
+                    const sorted = [...data.gifts].sort((a, b) => a - b);
+                    comparisonData.push({
+                        state: state,
+                        median: sorted[Math.floor(sorted.length / 2)],
+                        average: data.total / data.count,
+                        total: data.total,
+                        count: data.count,
+                        donorsPer100k: data.count / (pop * 10),
+                        perCapita: data.total / (pop * 1000000)
+                    });
+                }
+            });
+            
+            // Sort by total for consistent ordering
+            comparisonData.sort((a, b) => b.total - a.total);
+            const top15 = comparisonData.slice(0, 15);
+            
+            // Normalize values for comparison (0-100 scale)
+            const normalize = (values) => {
+                const max = Math.max(...values);
+                return values.map(v => (v / max) * 100);
+            };
+            
+            const traces = [
+                {
+                    name: 'Median Gift',
+                    x: top15.map(d => d.state),
+                    y: normalize(top15.map(d => d.median)),
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    line: {color: '#ED1B2E', width: 2},
+                    marker: {size: 8},
+                    yaxis: 'y2'
+                },
+                {
+                    name: 'Average Gift',
+                    x: top15.map(d => d.state),
+                    y: normalize(top15.map(d => d.average)),
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    line: {color: '#66BB6A', width: 2},
+                    marker: {size: 8},
+                    yaxis: 'y2'
+                },
+                {
+                    name: 'Donors/100k',
+                    x: top15.map(d => d.state),
+                    y: normalize(top15.map(d => d.donorsPer100k)),
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    line: {color: '#FF9800', width: 2},
+                    marker: {size: 8},
+                    yaxis: 'y2'
+                },
+                {
+                    name: 'Per Capita',
+                    x: top15.map(d => d.state),
+                    y: normalize(top15.map(d => d.perCapita)),
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    line: {color: '#2196F3', width: 2},
+                    marker: {size: 8},
+                    yaxis: 'y2'
+                },
+                {
+                    name: 'Total Donations',
+                    x: top15.map(d => d.state),
+                    y: top15.map(d => d.total),
+                    type: 'bar',
+                    marker: {color: 'rgba(237, 27, 46, 0.3)'},
+                    yaxis: 'y'
+                }
+            ];
+            
+            const layout = {
+                title: 'Multi-Metric State Performance Analysis',
+                xaxis: {
+                    title: 'State',
+                    tickfont: {size: 12}
+                },
+                yaxis: {
+                    title: 'Total Donations ($)',
+                    side: 'left',
+                    tickprefix: '$',
+                    tickformat: ',.0f'
+                },
+                yaxis2: {
+                    title: 'Normalized Score (0-100)',
+                    side: 'right',
+                    overlaying: 'y',
+                    range: [0, 110]
+                },
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: {color: currentTheme === 'dark' ? '#e0e0e0' : '#231F20'},
+                legend: {
+                    x: 0.02,
+                    y: 0.98,
+                    bgcolor: 'rgba(255,255,255,0.9)',
+                    bordercolor: '#ED1B2E',
+                    borderwidth: 1
+                },
+                margin: {t: 50, b: 70, l: 80, r: 80},
+                height: 700,
+                hovermode: 'x unified'
+            };
+            
+            Plotly.newPlot('metricsComparisonChart', traces, layout, {responsive: true, displayModeBar: false});
+            
+            // Find states that excel in different metrics
+            const medianLeader = comparisonData.reduce((a, b) => a.median > b.median ? a : b);
+            const avgLeader = comparisonData.reduce((a, b) => a.average > b.average ? a : b);
+            const densityLeader = comparisonData.reduce((a, b) => a.donorsPer100k > b.donorsPer100k ? a : b);
+            
+            document.getElementById('comparisonInsight').innerHTML = 
+                `<strong>Metric Leaders:</strong> ` +
+                `Median Gift: ${medianLeader.state} ($${medianLeader.median.toFixed(0)}), ` +
+                `Average Gift: ${avgLeader.state} ($${avgLeader.average.toFixed(0)}), ` +
+                `Market Penetration: ${densityLeader.state} (${densityLeader.donorsPer100k.toFixed(1)}/100k)`;
         }
         
         // Load data when page loads
