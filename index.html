@@ -1276,70 +1276,91 @@
         }
         
         function createChoropleth(data) {
-            const stateData = {};
-            data.forEach(d => {
-                if (!stateData[d.state]) {
-                    stateData[d.state] = {total: 0, count: 0};
+            try {
+                const stateData = {};
+                data.forEach(d => {
+                    // Filter out empty states and ensure we have valid state codes
+                    if (d.state && d.state.length === 2) {
+                        if (!stateData[d.state]) {
+                            stateData[d.state] = {total: 0, count: 0};
+                        }
+                        stateData[d.state].total += d.gift_amount;
+                        stateData[d.state].count += 1;
+                    }
+                });
+                
+                const states = Object.keys(stateData);
+                
+                // Check if we have valid data
+                if (states.length === 0) {
+                    console.error('No valid state data for choropleth');
+                    document.getElementById('plotly-map').innerHTML = '<div style="text-align: center; padding: 50px;">No state data available for choropleth map</div>';
+                    return;
                 }
-                stateData[d.state].total += d.gift_amount;
-                stateData[d.state].count += 1;
-            });
-            
-            const states = Object.keys(stateData);
-            const totals = states.map(s => stateData[s].total);
-            const text = states.map(s => 
-                `${s}<br>Donors: ${stateData[s].count.toLocaleString()}<br>Total: $${stateData[s].total.toLocaleString()}`
-            );
-            
-            const trace = {
-                type: 'choropleth',
-                locationmode: 'USA-states',
-                locations: states,
-                z: totals,
-                text: text,
-                hovertemplate: '%{text}<extra></extra>',
-                colorscale: [
-                    [0, RED_CROSS_COLORS.white],
-                    [0.2, '#FFE6E8'],
-                    [0.4, '#FFB3B8'],
-                    [0.6, '#FF8088'],
-                    [0.8, RED_CROSS_COLORS.primary_red],
-                    [1, RED_CROSS_COLORS.dark_red]
-                ],
-                colorbar: {
-                    title: 'Total Donations',
-                    titlefont: {color: RED_CROSS_COLORS.dark_red},
-                    tickfont: {color: RED_CROSS_COLORS.gray},
-                    tickprefix: '$'
-                }
-            };
-            
-            const layout = {
-                geo: {
-                    scope: 'usa',
-                    projection: {type: 'albers usa'},
-                    showlakes: true,
-                    lakecolor: 'rgb(255, 255, 255)'
-                },
-                height: window.innerHeight - 60,
-                margin: {r:0, t:60, l:0, b:0},
-                title: {
-                    text: 'American Red Cross Donations by State',
-                    font: {size: 24, color: RED_CROSS_COLORS.primary_red, family: 'Arial, sans-serif'}
-                }
-            };
-            
-            const config = {
-                responsive: true,
-                displayModeBar: true,
-                displaylogo: false,
-                modeBarButtonsToRemove: ['select2d', 'lasso2d'],
-                doubleClick: 'reset+autosize',
-                scrollZoom: true
-            };
-            
-            Plotly.newPlot('plotly-map', [trace], layout, config);
-            // Choropleth doesn't use mapbox, so no zoom tracking needed
+                
+                const totals = states.map(s => stateData[s].total);
+                const text = states.map(s => 
+                    `${s}<br>Donors: ${stateData[s].count.toLocaleString()}<br>Total: $${Math.round(stateData[s].total).toLocaleString()}`
+                );
+                
+                // Debug: Log state data to check format
+                console.log('Choropleth states:', states.slice(0, 5));
+                console.log('Total states:', states.length);
+                
+                const trace = {
+                    type: 'choropleth',
+                    locationmode: 'USA-states',
+                    locations: states,
+                    z: totals,
+                    text: text,
+                    hovertemplate: '%{text}<extra></extra>',
+                    colorscale: [
+                        [0, '#FFFFFF'],
+                        [0.2, '#FFE6E8'],
+                        [0.4, '#FFB3B8'],
+                        [0.6, '#FF8088'],
+                        [0.8, '#ED1B2E'],
+                        [1, '#8B1A1E']
+                    ],
+                    colorbar: {
+                        title: 'Total Donations',
+                        titlefont: {color: '#8B1A1E'},
+                        tickfont: {color: '#6c757d'},
+                        tickprefix: '$',
+                        tickformat: ',.0f'
+                    }
+                };
+                
+                const layout = {
+                    geo: {
+                        scope: 'usa',
+                        projection: {type: 'albers usa'},
+                        showlakes: false,
+                        bgcolor: currentTheme === 'dark' ? '#2c3e50' : '#ffffff'
+                    },
+                    height: window.innerHeight - 60,
+                    margin: {r:0, t:60, l:0, b:0},
+                    title: {
+                        text: 'American Red Cross Donations by State',
+                        font: {size: 24, color: '#ED1B2E', family: 'Arial, sans-serif'}
+                    },
+                    paper_bgcolor: currentTheme === 'dark' ? '#2c3e50' : '#ffffff',
+                    plot_bgcolor: currentTheme === 'dark' ? '#2c3e50' : '#ffffff'
+                };
+                
+                const config = {
+                    responsive: true,
+                    displayModeBar: true,
+                    displaylogo: false,
+                    modeBarButtonsToRemove: ['select2d', 'lasso2d']
+                };
+                
+                Plotly.newPlot('plotly-map', [trace], layout, config);
+                console.log('Choropleth map created successfully');
+            } catch (error) {
+                console.error('Error creating choropleth:', error);
+                document.getElementById('plotly-map').innerHTML = '<div style="text-align: center; padding: 50px;">Error creating choropleth map: ' + error.message + '</div>';
+            }
         }
         
         let currentMarkerSize = 6; // Store current marker size for dynamic updates
