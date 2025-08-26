@@ -25,8 +25,9 @@ The project has two parallel implementations:
    - Template rendering via Flask
 
 ### Key Data Flow
-- Donor data stored in `data/donors.csv` (10,000+ records)
+- Donor data stored in `data/donors.csv` (10,117 records as of latest dataset)
 - Contains geocoded locations (X/Y coordinates), gift amounts, donor IDs
+- National statistics: $178,438,972 total, $17,638 average, $9,167 median
 - Data filtered by state, city, gift category, and minimum gift amount
 - Visualizations update dynamically based on filter selections
 
@@ -86,13 +87,20 @@ The application filters out:
 
 ## Advanced Analytics Dashboard
 
-The dashboard includes 5 specialized visualizations:
+The dashboard includes 9 specialized visualizations (accessible via "View Advanced Analytics Dashboard" button):
 
+**Primary Analytics (5 charts):**
 1. **Per Capita Efficiency Chart**: Horizontal bar chart showing donations per capita by state
 2. **Opportunity Matrix**: Bubble chart plotting average gift size vs donor count
 3. **Velocity Radar**: Multi-metric comparison across 6 performance dimensions
 4. **Wealth Gap Analysis**: Compares actual vs potential donations based on state wealth indices
 5. **Concentration Treemap**: Hierarchical view of donation concentration by state and top donors
+
+**Additional Metrics (4 charts - added based on national statistics):**
+6. **Median Gift by State**: Horizontal bars comparing to national median ($9,167)
+7. **Average Gift by State**: Horizontal bars comparing to national average ($17,638)
+8. **Donors per 100K Population**: Market penetration analysis
+9. **Comprehensive Metrics Comparison**: Multi-line chart overlaying all key metrics
 
 Each chart includes:
 - State population data (2023 estimates)
@@ -134,8 +142,14 @@ The application supports light/dark themes:
 - Large dataset (10,000+ points) requires clustering for Leaflet
 - Heatmap intensity is adjustable (radius 5-50)
 - Charts limited to top 15-20 items for readability
+- Dashboard charts load asynchronously via setTimeout for better performance
 
 ### Browser Compatibility
 - Requires modern browser with ES6 support
 - Plotly.js and Leaflet loaded from CDN
 - No build process or transpilation needed for static version
+
+### Work in Progress Notice
+- Analytics dashboard displays WIP notice indicating sample visualizations
+- All metrics and insights should be treated as preliminary
+- Dashboard requires validation and refinement based on development team feedback
