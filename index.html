@@ -540,6 +540,90 @@
             padding-bottom: 10px;
         }
         
+        /* Advanced Dashboard Styles */
+        .advanced-dashboard {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-primary);
+            z-index: 10000;
+            overflow-y: auto;
+        }
+        
+        .advanced-dashboard.show {
+            display: block;
+        }
+        
+        .dashboard-header {
+            background: var(--bg-header);
+            color: white;
+            padding: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .dashboard-content {
+            padding: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .dashboard-card {
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px var(--shadow);
+        }
+        
+        .dashboard-card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--red-cross-primary);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--red-cross-light-gray);
+        }
+        
+        .insight-box {
+            background: linear-gradient(135deg, rgba(237,27,46,0.1) 0%, rgba(179,30,41,0.1) 100%);
+            border-left: 4px solid var(--red-cross-primary);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        
+        .insight-title {
+            font-weight: 600;
+            color: var(--red-cross-secondary);
+            margin-bottom: 5px;
+        }
+        
+        .insight-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--red-cross-primary);
+        }
+        
+        .insight-description {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+        
         @media (max-width: 768px) {
             .controls-grid {
                 grid-template-columns: 1fr;
@@ -615,6 +699,14 @@
                 </div>
             </div>
             
+            <!-- Advanced Analytics Button -->
+            <div style="padding: 15px; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color);">
+                <h3 style="margin: 0 0 10px 0; font-size: 14px; color: var(--red-cross-primary);">DEVELOPMENT INSIGHTS</h3>
+                <button onclick="toggleAdvancedCharts()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #ED1B2E 0%, #B31E29 100%); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.3s ease;">
+                    📊 View Advanced Analytics Dashboard
+                </button>
+            </div>
+            
             <div class="controls-panel">
                 <h3 style="margin: 0 0 15px 0; font-size: 14px; color: var(--red-cross-primary);">FILTERS</h3>
                 <div class="controls-grid">
@@ -674,6 +766,65 @@
             <div class="location-counter" id="location-counter" style="display: none;">
                 Showing <span id="location-count">0</span> locations
             </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Advanced Analytics Dashboard -->
+    <div class="advanced-dashboard" id="advancedDashboard">
+        <div class="dashboard-header">
+            <div>
+                <h2 style="margin: 0; font-size: 24px;">📊 Development Officer Analytics Dashboard</h2>
+                <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">Advanced insights for strategic fundraising decisions</p>
+            </div>
+            <button onclick="closeAdvancedDashboard()" style="background: rgba(255,255,255,0.2); border: 2px solid white; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: 600;">✕ Close Dashboard</button>
+        </div>
+        <div class="dashboard-content">
+            <div class="dashboard-grid">
+                <div class="dashboard-card" style="grid-column: span 2;">
+                    <div class="dashboard-card-title">💰 Donation Efficiency by State (Per Capita Analysis)</div>
+                    <div id="perCapitaChart" style="height: 400px;"></div>
+                    <div class="insight-box">
+                        <div class="insight-title">Key Insight</div>
+                        <div id="perCapitaInsight" class="insight-description">Loading analysis...</div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="dashboard-card-title">🎯 Donor Market Opportunity Matrix</div>
+                    <div id="opportunityMatrix" style="height: 400px;"></div>
+                    <div class="insight-box">
+                        <div class="insight-title">Opportunity Zones</div>
+                        <div id="matrixInsight" class="insight-description">Loading analysis...</div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="dashboard-card-title">🌟 Donation Velocity Radar</div>
+                    <div id="velocityRadar" style="height: 400px;"></div>
+                    <div class="insight-box">
+                        <div class="insight-title">Performance Metrics</div>
+                        <div id="radarInsight" class="insight-description">Loading analysis...</div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="dashboard-card-title">📈 Wealth Index vs Donation Gap</div>
+                    <div id="wealthGapChart" style="height: 400px;"></div>
+                    <div class="insight-box">
+                        <div class="insight-title">Untapped Potential</div>
+                        <div id="gapInsight" class="insight-description">Loading analysis...</div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="dashboard-card-title">🏆 Top Donor Concentration Treemap</div>
+                    <div id="concentrationTreemap" style="height: 400px;"></div>
+                    <div class="insight-box">
+                        <div class="insight-title">Concentration Risk</div>
+                        <div id="treemapInsight" class="insight-description">Loading analysis...</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1605,6 +1756,515 @@
                 applyFilters();
             }
         });
+        
+        // State population data (2023 estimates in millions)
+        const statePopulations = {
+            'AL': 5.108, 'AK': 0.734, 'AZ': 7.431, 'AR': 3.068, 'CA': 38.94,
+            'CO': 5.878, 'CT': 3.617, 'DE': 1.032, 'FL': 22.61, 'GA': 11.03,
+            'HI': 1.44, 'ID': 1.964, 'IL': 12.55, 'IN': 6.862, 'IA': 3.207,
+            'KS': 2.941, 'KY': 4.526, 'LA': 4.574, 'ME': 1.395, 'MD': 6.165,
+            'MA': 7.001, 'MI': 10.04, 'MN': 5.738, 'MS': 2.94, 'MO': 6.196,
+            'MT': 1.123, 'NE': 1.978, 'NV': 3.194, 'NH': 1.402, 'NJ': 9.261,
+            'NM': 2.114, 'NY': 19.5, 'NC': 10.84, 'ND': 0.784, 'OH': 11.78,
+            'OK': 4.052, 'OR': 4.233, 'PA': 12.96, 'RI': 1.096, 'SC': 5.374,
+            'SD': 0.919, 'TN': 7.127, 'TX': 30.5, 'UT': 3.423, 'VT': 0.647,
+            'VA': 8.715, 'WA': 7.812, 'WV': 1.77, 'WI': 5.911, 'WY': 0.584,
+            'DC': 0.678
+        };
+        
+        // Wealth index by state (relative to national average = 100)
+        const stateWealthIndex = {
+            'MA': 135, 'CT': 132, 'NJ': 128, 'MD': 125, 'HI': 122,
+            'CA': 120, 'NH': 118, 'AK': 117, 'VA': 115, 'WA': 113,
+            'CO': 112, 'NY': 111, 'MN': 110, 'IL': 108, 'RI': 106,
+            'DE': 104, 'OR': 102, 'PA': 101, 'VT': 100, 'WI': 99,
+            'ND': 98, 'NE': 97, 'IA': 96, 'UT': 95, 'WY': 94,
+            'KS': 93, 'TX': 92, 'MI': 91, 'OH': 90, 'AZ': 89,
+            'FL': 88, 'NV': 87, 'ME': 86, 'IN': 85, 'MO': 84,
+            'GA': 83, 'NC': 82, 'MT': 81, 'SD': 80, 'ID': 79,
+            'TN': 78, 'SC': 77, 'OK': 76, 'NM': 75, 'LA': 74,
+            'KY': 73, 'AL': 72, 'AR': 71, 'WV': 70, 'MS': 69,
+            'DC': 140
+        };
+        
+        function toggleAdvancedCharts() {
+            const dashboard = document.getElementById('advancedDashboard');
+            dashboard.classList.add('show');
+            
+            // Generate charts when dashboard opens
+            setTimeout(() => {
+                createPerCapitaChart();
+                createOpportunityMatrix();
+                createVelocityRadar();
+                createWealthGapChart();
+                createConcentrationTreemap();
+            }, 100);
+        }
+        
+        function closeAdvancedDashboard() {
+            document.getElementById('advancedDashboard').classList.remove('show');
+        }
+        
+        function createPerCapitaChart() {
+            // Calculate per capita donations by state
+            const stateData = {};
+            processedData.forEach(d => {
+                if (d.state && d.state.length === 2) {
+                    if (!stateData[d.state]) {
+                        stateData[d.state] = {total: 0, count: 0};
+                    }
+                    stateData[d.state].total += d.gift_amount;
+                    stateData[d.state].count += 1;
+                }
+            });
+            
+            const perCapitaData = [];
+            Object.keys(stateData).forEach(state => {
+                const pop = statePopulations[state];
+                if (pop) {
+                    perCapitaData.push({
+                        state: state,
+                        total: stateData[state].total,
+                        perCapita: stateData[state].total / (pop * 1000000),
+                        donorDensity: stateData[state].count / (pop * 1000),
+                        avgGift: stateData[state].total / stateData[state].count
+                    });
+                }
+            });
+            
+            perCapitaData.sort((a, b) => b.perCapita - a.perCapita);
+            const top15 = perCapitaData.slice(0, 15);
+            
+            const trace = {
+                x: top15.map(d => d.state),
+                y: top15.map(d => d.perCapita),
+                type: 'bar',
+                marker: {
+                    color: top15.map(d => d.perCapita),
+                    colorscale: [
+                        [0, '#FFE6E8'],
+                        [0.5, '#ED1B2E'],
+                        [1, '#8B1A1E']
+                    ],
+                    showscale: true,
+                    colorbar: {
+                        title: '$ per capita',
+                        titlefont: {color: currentTheme === 'dark' ? '#e0e0e0' : '#231F20'}
+                    }
+                },
+                text: top15.map(d => `$${d.perCapita.toFixed(2)} per person<br>Total: $${(d.total/1000000).toFixed(1)}M<br>Donors per 1000: ${d.donorDensity.toFixed(2)}`),
+                hovertemplate: '%{x}<br>%{text}<extra></extra>'
+            };
+            
+            const layout = {
+                title: 'Top 15 States by Donation Per Capita',
+                xaxis: {title: 'State', tickfont: {color: currentTheme === 'dark' ? '#b0b0b0' : '#6D6E70'}},
+                yaxis: {title: 'Donations per Capita ($)', tickfont: {color: currentTheme === 'dark' ? '#b0b0b0' : '#6D6E70'}},
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: {color: currentTheme === 'dark' ? '#e0e0e0' : '#231F20'},
+                margin: {t: 40, b: 60}
+            };
+            
+            Plotly.newPlot('perCapitaChart', [trace], layout, {responsive: true, displayModeBar: false});
+            
+            // Update insight
+            const topState = top15[0];
+            document.getElementById('perCapitaInsight').innerHTML = 
+                `<strong>${topState.state}</strong> leads with <strong>$${topState.perCapita.toFixed(2)}</strong> per capita. ` +
+                `States with high per capita but low total donations represent expansion opportunities. ` +
+                `Focus on states with >$0.50 per capita for high-yield campaigns.`;
+        }
+        
+        function createOpportunityMatrix() {
+            // Create bubble chart: X=avg gift size, Y=donor count, Size=total donations
+            const stateData = {};
+            processedData.forEach(d => {
+                if (d.state && d.state.length === 2) {
+                    if (!stateData[d.state]) {
+                        stateData[d.state] = {total: 0, count: 0, gifts: []};
+                    }
+                    stateData[d.state].total += d.gift_amount;
+                    stateData[d.state].count += 1;
+                    stateData[d.state].gifts.push(d.gift_amount);
+                }
+            });
+            
+            const matrixData = [];
+            Object.keys(stateData).forEach(state => {
+                const data = stateData[state];
+                if (data.count > 5) { // Only show states with meaningful data
+                    matrixData.push({
+                        state: state,
+                        avgGift: data.total / data.count,
+                        donorCount: data.count,
+                        total: data.total,
+                        maxGift: Math.max(...data.gifts)
+                    });
+                }
+            });
+            
+            const trace = {
+                x: matrixData.map(d => d.avgGift),
+                y: matrixData.map(d => d.donorCount),
+                mode: 'markers+text',
+                marker: {
+                    size: matrixData.map(d => Math.sqrt(d.total) / 50),
+                    color: matrixData.map(d => d.maxGift),
+                    colorscale: [
+                        [0, '#FFE6E8'],
+                        [0.3, '#FF8088'],
+                        [0.6, '#ED1B2E'],
+                        [1, '#4A0E0E']
+                    ],
+                    showscale: true,
+                    colorbar: {
+                        title: 'Max Gift',
+                        titlefont: {color: currentTheme === 'dark' ? '#e0e0e0' : '#231F20'},
+                        tickprefix: '$'
+                    },
+                    opacity: 0.7,
+                    line: {color: '#ED1B2E', width: 1}
+                },
+                text: matrixData.map(d => d.state),
+                textposition: 'middle center',
+                textfont: {size: 10, color: currentTheme === 'dark' ? '#e0e0e0' : '#231F20'},
+                hovertemplate: '<b>%{text}</b><br>Avg Gift: $%{x:,.0f}<br>Donors: %{y}<br>Total: $%{marker.size:,.0f}<extra></extra>'
+            };
+            
+            const layout = {
+                title: 'Donor Market Segmentation',
+                xaxis: {
+                    title: 'Average Gift Size ($)',
+                    type: 'log',
+                    tickfont: {color: currentTheme === 'dark' ? '#b0b0b0' : '#6D6E70'}
+                },
+                yaxis: {
+                    title: 'Number of Donors',
+                    type: 'log',
+                    tickfont: {color: currentTheme === 'dark' ? '#b0b0b0' : '#6D6E70'}
+                },
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: {color: currentTheme === 'dark' ? '#e0e0e0' : '#231F20'},
+                margin: {t: 40},
+                annotations: [
+                    {
+                        x: 0.95, y: 0.95,
+                        xref: 'paper', yref: 'paper',
+                        text: 'High Value<br>Low Volume',
+                        showarrow: false,
+                        font: {size: 11, color: '#ED1B2E'}
+                    },
+                    {
+                        x: 0.05, y: 0.95,
+                        xref: 'paper', yref: 'paper',
+                        text: 'High Volume<br>Low Value',
+                        showarrow: false,
+                        font: {size: 11, color: '#B31E29'}
+                    }
+                ]
+            };
+            
+            Plotly.newPlot('opportunityMatrix', [trace], layout, {responsive: true, displayModeBar: false});
+            
+            // Find opportunity zones
+            const highValue = matrixData.filter(d => d.avgGift > 50000).map(d => d.state);
+            const highVolume = matrixData.filter(d => d.donorCount > 100).map(d => d.state);
+            
+            document.getElementById('matrixInsight').innerHTML = 
+                `<strong>High-Value Markets:</strong> ${highValue.slice(0,3).join(', ') || 'None'}<br>` +
+                `<strong>High-Volume Markets:</strong> ${highVolume.slice(0,3).join(', ') || 'None'}<br>` +
+                `Target upper-right quadrant states for major gift campaigns.`;
+        }
+        
+        function createVelocityRadar() {
+            // Calculate top 5 states across multiple metrics
+            const stateMetrics = {};
+            processedData.forEach(d => {
+                if (d.state && d.state.length === 2) {
+                    if (!stateMetrics[d.state]) {
+                        stateMetrics[d.state] = {
+                            total: 0,
+                            count: 0,
+                            gifts: [],
+                            categories: {}
+                        };
+                    }
+                    stateMetrics[d.state].total += d.gift_amount;
+                    stateMetrics[d.state].count += 1;
+                    stateMetrics[d.state].gifts.push(d.gift_amount);
+                    
+                    if (!stateMetrics[d.state].categories[d.gift_category]) {
+                        stateMetrics[d.state].categories[d.gift_category] = 0;
+                    }
+                    stateMetrics[d.state].categories[d.gift_category]++;
+                }
+            });
+            
+            // Calculate rankings
+            const states = Object.keys(stateMetrics);
+            const rankings = states.map(state => {
+                const data = stateMetrics[state];
+                const pop = statePopulations[state] || 1;
+                return {
+                    state: state,
+                    totalScore: data.total,
+                    avgGiftScore: data.total / data.count,
+                    donorCountScore: data.count,
+                    perCapitaScore: data.total / (pop * 1000000),
+                    maxGiftScore: Math.max(...data.gifts),
+                    diversityScore: Object.keys(data.categories).length
+                };
+            });
+            
+            // Normalize scores to 0-100 scale
+            const normalize = (arr, key) => {
+                const max = Math.max(...arr.map(d => d[key]));
+                arr.forEach(d => d[key + 'Norm'] = (d[key] / max) * 100);
+            };
+            
+            normalize(rankings, 'totalScore');
+            normalize(rankings, 'avgGiftScore');
+            normalize(rankings, 'donorCountScore');
+            normalize(rankings, 'perCapitaScore');
+            normalize(rankings, 'maxGiftScore');
+            normalize(rankings, 'diversityScore');
+            
+            // Get top 5 by total
+            rankings.sort((a, b) => b.totalScore - a.totalScore);
+            const top5 = rankings.slice(0, 5);
+            
+            const traces = top5.map((d, i) => ({
+                type: 'scatterpolar',
+                r: [
+                    d.totalScoreNorm,
+                    d.avgGiftScoreNorm,
+                    d.donorCountScoreNorm,
+                    d.perCapitaScoreNorm,
+                    d.maxGiftScoreNorm,
+                    d.diversityScoreNorm
+                ],
+                theta: ['Total Donations', 'Avg Gift Size', 'Donor Count', 'Per Capita', 'Max Gift', 'Gift Diversity'],
+                fill: 'toself',
+                name: d.state,
+                marker: {color: ['#ED1B2E', '#FF8088', '#FFB3B8', '#B31E29', '#8B1A1E'][i]},
+                opacity: 0.6
+            }));
+            
+            const layout = {
+                polar: {
+                    radialaxis: {
+                        visible: true,
+                        range: [0, 100],
+                        tickfont: {color: currentTheme === 'dark' ? '#b0b0b0' : '#6D6E70'}
+                    },
+                    angularaxis: {
+                        tickfont: {color: currentTheme === 'dark' ? '#b0b0b0' : '#6D6E70'}
+                    }
+                },
+                showlegend: true,
+                legend: {
+                    x: 1.1,
+                    y: 0.5,
+                    font: {color: currentTheme === 'dark' ? '#e0e0e0' : '#231F20'}
+                },
+                paper_bgcolor: 'transparent',
+                font: {color: currentTheme === 'dark' ? '#e0e0e0' : '#231F20'},
+                margin: {t: 40, r: 120}
+            };
+            
+            Plotly.newPlot('velocityRadar', traces, layout, {responsive: true, displayModeBar: false});
+            
+            // Update insight
+            const leader = top5[0];
+            document.getElementById('radarInsight').innerHTML = 
+                `<strong>${leader.state}</strong> leads overall performance. ` +
+                `States with balanced metrics (circular pattern) show healthy donor ecosystems. ` +
+                `Spiky patterns indicate opportunities for diversification.`;
+        }
+        
+        function createWealthGapChart() {
+            // Calculate actual vs potential donations based on wealth index
+            const stateData = {};
+            processedData.forEach(d => {
+                if (d.state && d.state.length === 2) {
+                    if (!stateData[d.state]) {
+                        stateData[d.state] = {total: 0, count: 0};
+                    }
+                    stateData[d.state].total += d.gift_amount;
+                    stateData[d.state].count += 1;
+                }
+            });
+            
+            const gapAnalysis = [];
+            Object.keys(stateWealthIndex).forEach(state => {
+                const wealth = stateWealthIndex[state];
+                const pop = statePopulations[state];
+                const actual = stateData[state] ? stateData[state].total : 0;
+                
+                if (pop && actual > 0) {
+                    // Expected donations based on wealth (normalized)
+                    const expectedPerCapita = (wealth / 100) * 0.5; // Base expectation
+                    const expected = expectedPerCapita * pop * 1000000;
+                    const gap = expected - actual;
+                    const efficiency = (actual / expected) * 100;
+                    
+                    gapAnalysis.push({
+                        state: state,
+                        wealth: wealth,
+                        actual: actual,
+                        expected: expected,
+                        gap: gap,
+                        efficiency: efficiency,
+                        opportunity: gap > 0 ? gap : 0
+                    });
+                }
+            });
+            
+            // Sort by opportunity
+            gapAnalysis.sort((a, b) => b.opportunity - a.opportunity);
+            const top20 = gapAnalysis.slice(0, 20);
+            
+            const trace1 = {
+                x: top20.map(d => d.state),
+                y: top20.map(d => d.actual / 1000000),
+                name: 'Actual Donations',
+                type: 'bar',
+                marker: {color: '#ED1B2E'}
+            };
+            
+            const trace2 = {
+                x: top20.map(d => d.state),
+                y: top20.map(d => d.expected / 1000000),
+                name: 'Potential (Based on Wealth)',
+                type: 'bar',
+                marker: {color: '#FFB3B8'},
+                opacity: 0.7
+            };
+            
+            const layout = {
+                title: 'Donation Potential Gap Analysis',
+                barmode: 'overlay',
+                xaxis: {
+                    title: 'State',
+                    tickfont: {color: currentTheme === 'dark' ? '#b0b0b0' : '#6D6E70'}
+                },
+                yaxis: {
+                    title: 'Donations ($ Millions)',
+                    tickfont: {color: currentTheme === 'dark' ? '#b0b0b0' : '#6D6E70'}
+                },
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: {color: currentTheme === 'dark' ? '#e0e0e0' : '#231F20'},
+                legend: {
+                    x: 0.7,
+                    y: 1,
+                    font: {color: currentTheme === 'dark' ? '#e0e0e0' : '#231F20'}
+                },
+                margin: {t: 40, b: 60}
+            };
+            
+            Plotly.newPlot('wealthGapChart', [trace1, trace2], layout, {responsive: true, displayModeBar: false});
+            
+            // Calculate total opportunity
+            const totalOpportunity = top20.reduce((sum, d) => sum + d.opportunity, 0);
+            const topOpportunities = top20.filter(d => d.opportunity > 0).slice(0, 3);
+            
+            document.getElementById('gapInsight').innerHTML = 
+                `<strong>Total Untapped Potential:</strong> $${(totalOpportunity/1000000).toFixed(1)}M<br>` +
+                `<strong>Top Opportunities:</strong> ${topOpportunities.map(d => d.state).join(', ')}<br>` +
+                `Focus on wealthy states with low donation efficiency for maximum ROI.`;
+        }
+        
+        function createConcentrationTreemap() {
+            // Create hierarchical data for treemap
+            const stateData = {};
+            processedData.forEach(d => {
+                if (d.state && d.state.length === 2) {
+                    if (!stateData[d.state]) {
+                        stateData[d.state] = {total: 0, donors: {}};
+                    }
+                    stateData[d.state].total += d.gift_amount;
+                    
+                    const donorId = d['Donor #'] || 'Unknown';
+                    if (!stateData[d.state].donors[donorId]) {
+                        stateData[d.state].donors[donorId] = 0;
+                    }
+                    stateData[d.state].donors[donorId] += d.gift_amount;
+                }
+            });
+            
+            // Get top 10 states
+            const sortedStates = Object.entries(stateData)
+                .sort((a, b) => b[1].total - a[1].total)
+                .slice(0, 10);
+            
+            const labels = ['United States'];
+            const parents = [''];
+            const values = [sortedStates.reduce((sum, [s, d]) => sum + d.total, 0)];
+            const text = ['Total Donations'];
+            
+            sortedStates.forEach(([state, data]) => {
+                labels.push(state);
+                parents.push('United States');
+                values.push(data.total);
+                text.push(`${state}<br>$${(data.total/1000000).toFixed(2)}M`);
+                
+                // Add top donors for each state
+                const topDonors = Object.entries(data.donors)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5);
+                
+                topDonors.forEach(([donor, amount], i) => {
+                    labels.push(`${state}-${donor}`);
+                    parents.push(state);
+                    values.push(amount);
+                    text.push(`Donor ${i+1}<br>$${(amount/1000).toFixed(0)}K`);
+                });
+            });
+            
+            const trace = {
+                type: 'treemap',
+                labels: labels,
+                parents: parents,
+                values: values,
+                text: text,
+                textinfo: 'text',
+                marker: {
+                    colorscale: [
+                        [0, '#FFE6E8'],
+                        [0.3, '#FFB3B8'],
+                        [0.6, '#FF8088'],
+                        [0.8, '#ED1B2E'],
+                        [1, '#8B1A1E']
+                    ],
+                    line: {width: 2, color: '#fff'}
+                },
+                hovertemplate: '%{label}<br>%{value:$,.0f}<br>%{percentParent}<extra></extra>'
+            };
+            
+            const layout = {
+                title: 'Donation Concentration by State and Top Donors',
+                paper_bgcolor: 'transparent',
+                font: {color: currentTheme === 'dark' ? '#e0e0e0' : '#231F20'},
+                margin: {t: 40, b: 0}
+            };
+            
+            Plotly.newPlot('concentrationTreemap', [trace], layout, {responsive: true, displayModeBar: false});
+            
+            // Calculate concentration metrics
+            const totalDonations = processedData.reduce((sum, d) => sum + d.gift_amount, 0);
+            const top10Percent = Math.floor(processedData.length * 0.1);
+            const sortedDonations = [...processedData].sort((a, b) => b.gift_amount - a.gift_amount);
+            const top10PercentAmount = sortedDonations.slice(0, top10Percent).reduce((sum, d) => sum + d.gift_amount, 0);
+            const concentration = (top10PercentAmount / totalDonations * 100).toFixed(1);
+            
+            document.getElementById('treemapInsight').innerHTML = 
+                `<strong>Concentration:</strong> Top 10% of donors contribute ${concentration}% of total<br>` +
+                `<strong>Risk Level:</strong> ${concentration > 50 ? 'High' : concentration > 30 ? 'Medium' : 'Low'}<br>` +
+                `Diversification needed in states with high donor concentration.`;
+        }
         
         // Load data when page loads
         loadCSVData();
